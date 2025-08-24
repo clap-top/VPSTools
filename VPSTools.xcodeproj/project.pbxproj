@@ -1,0 +1,497 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		18856BC32E594E4B00D32A6D /* AppLifecycleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18856BC22E594E4B00D32A6D /* AppLifecycleManager.swift */; };
+		18856BC52E59581000D32A6D /* QuickDeployView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18856BC42E59580D00D32A6D /* QuickDeployView.swift */; };
+		18856BC72E597C3500D32A6D /* MonitoringView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18856BC62E597C3400D32A6D /* MonitoringView.swift */; };
+		18856BC92E5999FB00D32A6D /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18856BC82E5999FB00D32A6D /* LocalizationManager.swift */; };
+		A1234567890123456789012A /* VPSTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789012B /* VPSTools.swift */; };
+		A1234567890123456789012C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789012D /* ContentView.swift */; };
+		A1234567890123456789012E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789012F /* Assets.xcassets */; };
+		A1234567890123456789013A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789013B /* Preview Assets.xcassets */; };
+		A1234567890123456789016C /* VPSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789016D /* VPSModels.swift */; };
+		A1234567890123456789017A /* CommonModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789017B /* CommonModels.swift */; };
+		A1234567890123456789025A /* SSHClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789025B /* SSHClient.swift */; };
+		A1234567890123456789025C /* DeploymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789025D /* DeploymentService.swift */; };
+		A1234567890123456789028A /* VPSManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789028B /* VPSManager.swift */; };
+		A1234567890123456789030A /* DeploymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789030B /* DeploymentView.swift */; };
+		A1234567890123456789033A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789033B /* SettingsView.swift */; };
+		A1234567890123456789035A /* VPSManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789035B /* VPSManagementView.swift */; };
+		A1234567890123456789038A /* VPSDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789038B /* VPSDetailView.swift */; };
+		A1234567890123456789039A /* DeploymentExecutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789039B /* DeploymentExecutionView.swift */; };
+		A1234567890123456789040A /* NaturalLanguageDeploymentExecutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789040B /* NaturalLanguageDeploymentExecutionView.swift */; };
+		A1234567890123456789041A /* DeploymentTaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789041B /* DeploymentTaskDetailView.swift */; };
+		A1234567890123456789042A /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789042B /* SharedComponents.swift */; };
+		F684E4A82E55D919001A0E6D /* SwiftLibSSH in Frameworks */ = {isa = PBXBuildFile; productRef = F684E4A72E55D919001A0E6D /* SwiftLibSSH */; };
+		F684E4AF2E581B54001A0E6D /* SudoHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4AE2E581B54001A0E6D /* SudoHandler.swift */; };
+		F684E4B12E582070001A0E6D /* SingBoxInstallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B02E582070001A0E6D /* SingBoxInstallService.swift */; };
+		F684E4B32E5820FB001A0E6D /* SingBoxInstallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B22E5820FB001A0E6D /* SingBoxInstallView.swift */; };
+		F684E4B52E585ED9001A0E6D /* EditVPSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B42E585ED9001A0E6D /* EditVPSView.swift */; };
+		F684E4B72E586CF8001A0E6D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B62E586CF8001A0E6D /* HomeView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		18856BC22E594E4B00D32A6D /* AppLifecycleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycleManager.swift; sourceTree = "<group>"; };
+		18856BC42E59580D00D32A6D /* QuickDeployView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDeployView.swift; sourceTree = "<group>"; };
+		18856BC62E597C3400D32A6D /* MonitoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringView.swift; sourceTree = "<group>"; };
+		18856BC82E5999FB00D32A6D /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationManager.swift; sourceTree = "<group>"; };
+		A1234567890123456789012B /* VPSTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPSTools.swift; sourceTree = "<group>"; };
+		A1234567890123456789012D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A1234567890123456789012F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1234567890123456789013B /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		A1234567890123456789013C /* VpsTools.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VpsTools.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1234567890123456789016D /* VPSModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPSModels.swift; sourceTree = "<group>"; };
+		A1234567890123456789017B /* CommonModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonModels.swift; sourceTree = "<group>"; };
+		A1234567890123456789025B /* SSHClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHClient.swift; sourceTree = "<group>"; };
+		A1234567890123456789025D /* DeploymentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentService.swift; sourceTree = "<group>"; };
+		A1234567890123456789028B /* VPSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPSManager.swift; sourceTree = "<group>"; };
+		A1234567890123456789030B /* DeploymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentView.swift; sourceTree = "<group>"; };
+		A1234567890123456789033B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1234567890123456789035B /* VPSManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPSManagementView.swift; sourceTree = "<group>"; };
+		A1234567890123456789037D /* VPSTools-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "VPSTools-Bridging-Header.h"; sourceTree = "<group>"; };
+		A1234567890123456789038B /* VPSDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPSDetailView.swift; sourceTree = "<group>"; };
+		A1234567890123456789039B /* DeploymentExecutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentExecutionView.swift; sourceTree = "<group>"; };
+		A1234567890123456789040B /* NaturalLanguageDeploymentExecutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaturalLanguageDeploymentExecutionView.swift; sourceTree = "<group>"; };
+		A1234567890123456789041B /* DeploymentTaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentTaskDetailView.swift; sourceTree = "<group>"; };
+		A1234567890123456789042B /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
+		F684E4AE2E581B54001A0E6D /* SudoHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SudoHandler.swift; sourceTree = "<group>"; };
+		F684E4B02E582070001A0E6D /* SingBoxInstallService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingBoxInstallService.swift; sourceTree = "<group>"; };
+		F684E4B22E5820FB001A0E6D /* SingBoxInstallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingBoxInstallView.swift; sourceTree = "<group>"; };
+		F684E4B42E585ED9001A0E6D /* EditVPSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVPSView.swift; sourceTree = "<group>"; };
+		F684E4B62E586CF8001A0E6D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1234567890123456789013D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F684E4A82E55D919001A0E6D /* SwiftLibSSH in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1234567890123456789013E /* VPSTools */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890123456789012B /* VPSTools.swift */,
+				A1234567890123456789012D /* ContentView.swift */,
+				A1234567890123456789017C /* Models */,
+				A1234567890123456789018C /* Services */,
+				A1234567890123456789037C /* Views */,
+				A1234567890123456789012F /* Assets.xcassets */,
+				A1234567890123456789013F /* Preview Content */,
+				A1234567890123456789037D /* VPSTools-Bridging-Header.h */,
+			);
+			path = VPSTools;
+			sourceTree = "<group>";
+		};
+		A1234567890123456789013F /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890123456789013B /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		A1234567890123456789014A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890123456789013C /* VpsTools.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1234567890123456789014B = {
+			isa = PBXGroup;
+			children = (
+				A1234567890123456789013E /* VPSTools */,
+				F6A643CE2E545079002D1FE0 /* Frameworks */,
+				A1234567890123456789014A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1234567890123456789017C /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A1234567890123456789016D /* VPSModels.swift */,
+				A1234567890123456789017B /* CommonModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A1234567890123456789018C /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				18856BC82E5999FB00D32A6D /* LocalizationManager.swift */,
+				18856BC22E594E4B00D32A6D /* AppLifecycleManager.swift */,
+				F684E4B02E582070001A0E6D /* SingBoxInstallService.swift */,
+				F684E4AE2E581B54001A0E6D /* SudoHandler.swift */,
+				A1234567890123456789025B /* SSHClient.swift */,
+				A1234567890123456789025D /* DeploymentService.swift */,
+				A1234567890123456789028B /* VPSManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A1234567890123456789037C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				18856BC62E597C3400D32A6D /* MonitoringView.swift */,
+				18856BC42E59580D00D32A6D /* QuickDeployView.swift */,
+				F684E4B62E586CF8001A0E6D /* HomeView.swift */,
+				F684E4B42E585ED9001A0E6D /* EditVPSView.swift */,
+				F684E4B22E5820FB001A0E6D /* SingBoxInstallView.swift */,
+				A1234567890123456789030B /* DeploymentView.swift */,
+				A1234567890123456789033B /* SettingsView.swift */,
+				A1234567890123456789035B /* VPSManagementView.swift */,
+				A1234567890123456789038B /* VPSDetailView.swift */,
+				A1234567890123456789039B /* DeploymentExecutionView.swift */,
+				A1234567890123456789040B /* NaturalLanguageDeploymentExecutionView.swift */,
+				A1234567890123456789041B /* DeploymentTaskDetailView.swift */,
+				A1234567890123456789042B /* SharedComponents.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F6A643CE2E545079002D1FE0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1234567890123456789014C /* VPSTools */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1234567890123456789014D /* Build configuration list for PBXNativeTarget "VPSTools" */;
+			buildPhases = (
+				A1234567890123456789014E /* Sources */,
+				A1234567890123456789013D /* Frameworks */,
+				A1234567890123456789014F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VPSTools;
+			productName = SwiftUIApp;
+			productReference = A1234567890123456789013C /* VpsTools.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1234567890123456789015A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					A1234567890123456789014C = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A1234567890123456789015B /* Build configuration list for PBXProject "VPSTools" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1234567890123456789014B;
+			packageReferences = (
+				F684E4A62E55D919001A0E6D /* XCRemoteSwiftPackageReference "SwiftLibSSH" */,
+			);
+			productRefGroup = A1234567890123456789014A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1234567890123456789014C /* VPSTools */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1234567890123456789014F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890123456789013A /* Preview Assets.xcassets in Resources */,
+				A1234567890123456789012E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1234567890123456789014E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1234567890123456789012C /* ContentView.swift in Sources */,
+				A1234567890123456789012A /* VPSTools.swift in Sources */,
+				18856BC72E597C3500D32A6D /* MonitoringView.swift in Sources */,
+				A1234567890123456789016C /* VPSModels.swift in Sources */,
+				F684E4AF2E581B54001A0E6D /* SudoHandler.swift in Sources */,
+				A1234567890123456789017A /* CommonModels.swift in Sources */,
+				F684E4B32E5820FB001A0E6D /* SingBoxInstallView.swift in Sources */,
+				A1234567890123456789025A /* SSHClient.swift in Sources */,
+				F684E4B12E582070001A0E6D /* SingBoxInstallService.swift in Sources */,
+				A1234567890123456789025C /* DeploymentService.swift in Sources */,
+				A1234567890123456789028A /* VPSManager.swift in Sources */,
+				A1234567890123456789030A /* DeploymentView.swift in Sources */,
+				18856BC32E594E4B00D32A6D /* AppLifecycleManager.swift in Sources */,
+				A1234567890123456789033A /* SettingsView.swift in Sources */,
+				18856BC52E59581000D32A6D /* QuickDeployView.swift in Sources */,
+				A1234567890123456789035A /* VPSManagementView.swift in Sources */,
+				18856BC92E5999FB00D32A6D /* LocalizationManager.swift in Sources */,
+				A1234567890123456789038A /* VPSDetailView.swift in Sources */,
+				F684E4B72E586CF8001A0E6D /* HomeView.swift in Sources */,
+				A1234567890123456789039A /* DeploymentExecutionView.swift in Sources */,
+				A1234567890123456789040A /* NaturalLanguageDeploymentExecutionView.swift in Sources */,
+				A1234567890123456789041A /* DeploymentTaskDetailView.swift in Sources */,
+				F684E4B52E585ED9001A0E6D /* EditVPSView.swift in Sources */,
+				A1234567890123456789042A /* SharedComponents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A1234567890123456789015C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6FLD485TC9;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1234567890123456789015D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6FLD485TC9;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A1234567890123456789015E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_ASSET_PATHS = "\"VPSTools/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = top.clap.M;
+				PRODUCT_NAME = VpsTools;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "VPSTools/VPSTools-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1234567890123456789015F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_ASSET_PATHS = "\"VPSTools/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = top.clap.M;
+				PRODUCT_NAME = VpsTools;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "VPSTools/VPSTools-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1234567890123456789014D /* Build configuration list for PBXNativeTarget "VPSTools" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1234567890123456789015E /* Debug */,
+				A1234567890123456789015F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1234567890123456789015B /* Build configuration list for PBXProject "VPSTools" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1234567890123456789015C /* Debug */,
+				A1234567890123456789015D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F684E4A62E55D919001A0E6D /* XCRemoteSwiftPackageReference "SwiftLibSSH" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/GitSwiftLLC/SwiftLibSSH";
+			requirement = {
+				kind = exactVersion;
+				version = 1.1.8;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F684E4A72E55D919001A0E6D /* SwiftLibSSH */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F684E4A62E55D919001A0E6D /* XCRemoteSwiftPackageReference "SwiftLibSSH" */;
+			productName = SwiftLibSSH;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A1234567890123456789015A /* Project object */;
+}

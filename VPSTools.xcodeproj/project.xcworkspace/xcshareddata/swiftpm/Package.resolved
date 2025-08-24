@@ -1,0 +1,33 @@
+{
+  "originHash" : "5da791d4c0a15f9b137fb239b0ff1cfc80705d423009cd92b0a480ba83d4ede4",
+  "pins" : [
+    {
+      "identity" : "swiftcssh",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GitSwiftLLC/SwiftCSSH.git",
+      "state" : {
+        "revision" : "5e39ec2b867f7b45f586010d73960f6ea6723a57",
+        "version" : "1.11.1"
+      }
+    },
+    {
+      "identity" : "swiftcssl",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GitSwiftLLC/SwiftCSSL.git",
+      "state" : {
+        "revision" : "aaeaa1ea5939a45769db61e3da79f7f955eb1714",
+        "version" : "3.5.0"
+      }
+    },
+    {
+      "identity" : "swiftlibssh",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GitSwiftLLC/SwiftLibSSH",
+      "state" : {
+        "revision" : "13f07d523762c68ddb52d2aba439a7276e51a132",
+        "version" : "1.1.8"
+      }
+    }
+  ],
+  "version" : 3
+}
