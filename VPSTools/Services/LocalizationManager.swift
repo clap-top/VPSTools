@@ -191,6 +191,7 @@ enum LocalizationKey: String, CaseIterable {
     case startFirstDeployment = "start_first_deployment"
     case deploymentTask = "deployment_task"
     case startTime = "start_time"
+    case completedTime = "completed_time"
     case commands = "commands"
     case configFiles = "config_files"
     case commandsToExecute = "commands_to_execute"
@@ -481,7 +482,8 @@ enum LocalizationKey: String, CaseIterable {
             .configureDocker: "• 配置 Docker 环境",
             .startFirstDeployment: "开始您的第一次部署",
             .deploymentTask: "部署任务 #%@",
-            .startTime: "开始时间: %@",
+            .startTime: "开始时间: ",
+            .completedTime: "完成时间: ",
             .commands: "命令",
             .configFiles: "配置文件",
             .commandsToExecute: "将要执行的命令",
@@ -758,7 +760,8 @@ enum LocalizationKey: String, CaseIterable {
             .configureDocker: "• Configure Docker environment",
             .startFirstDeployment: "Start your first deployment",
             .deploymentTask: "Deployment Task #%@",
-            .startTime: "Start Time: %@",
+            .startTime: "Start Time: ",
+            .completedTime: "Completed Time: ",
             .commands: "Commands",
             .configFiles: "Config Files",
             .commandsToExecute: "Commands to execute",

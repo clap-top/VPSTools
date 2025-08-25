@@ -456,7 +456,11 @@ struct DeploymentHistoryView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
-                    ForEach(deploymentService.deploymentTasks.sorted(by: { $0.startedAt ?? Date() > $1.startedAt ?? Date() })) { task in
+                    ForEach(deploymentService.deploymentTasks.sorted(by: { task1, task2 in
+                        let date1 = task1.completedAt ?? task1.startedAt ?? Date.distantPast
+                        let date2 = task2.completedAt ?? task2.startedAt ?? Date.distantPast
+                        return date1 > date2
+                    })) { task in
                         DeploymentHistoryTaskRow(task: task) {
                             selectedTask = task
                         }
@@ -484,8 +488,12 @@ struct DeploymentHistoryTaskRow: View {
                         .font(.headline)
                         .lineLimit(1)
                     
-                    if let startedAt = task.startedAt {
-                        Text("\(String(.startTime)): \(startedAt, style: .relative)")
+                    if let completedAt = task.completedAt {
+                        Text("\(String(.completedTime))\(completedAt, style: .relative)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if let startedAt = task.startedAt {
+                        Text("\(String(.startTime))\(startedAt, style: .relative)")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
