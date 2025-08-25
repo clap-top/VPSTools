@@ -34,6 +34,7 @@
 		F684E4B32E5820FB001A0E6D /* SingBoxInstallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B22E5820FB001A0E6D /* SingBoxInstallView.swift */; };
 		F684E4B52E585ED9001A0E6D /* EditVPSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B42E585ED9001A0E6D /* EditVPSView.swift */; };
 		F684E4B72E586CF8001A0E6D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B62E586CF8001A0E6D /* HomeView.swift */; };
+		F684E4BA2E5C08D2001A0E6D /* builtin_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = F684E4B82E5C08D2001A0E6D /* builtin_templates.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		F684E4B22E5820FB001A0E6D /* SingBoxInstallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingBoxInstallView.swift; sourceTree = "<group>"; };
 		F684E4B42E585ED9001A0E6D /* EditVPSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVPSView.swift; sourceTree = "<group>"; };
 		F684E4B62E586CF8001A0E6D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		F684E4B82E5C08D2001A0E6D /* builtin_templates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = builtin_templates.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +91,7 @@
 				A1234567890123456789037C /* Views */,
 				A1234567890123456789012F /* Assets.xcassets */,
 				A1234567890123456789013F /* Preview Content */,
+				F684E4B92E5C08D2001A0E6D /* Resources */,
 				A1234567890123456789037D /* VPSTools-Bridging-Header.h */,
 			);
 			path = VPSTools;
@@ -162,6 +165,14 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		F684E4B92E5C08D2001A0E6D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F684E4B82E5C08D2001A0E6D /* builtin_templates.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		F6A643CE2E545079002D1FE0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -232,6 +243,7 @@
 			files = (
 				A1234567890123456789013A /* Preview Assets.xcassets in Resources */,
 				A1234567890123456789012E /* Assets.xcassets in Resources */,
+				F684E4BA2E5C08D2001A0E6D /* builtin_templates.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

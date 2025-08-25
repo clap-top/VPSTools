@@ -385,6 +385,11 @@ enum VariableType: String, CaseIterable, Codable {
     }
 }
 
+/// 模板响应结构体
+struct TemplateResponse: Codable {
+    let templates: [DeploymentTemplate]
+}
+
 /// 部署任务
 struct DeploymentTask: Identifiable, Codable {
     let id: UUID

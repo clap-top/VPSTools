@@ -1,0 +1,698 @@
+{
+  "templates": [
+    {
+      "id": "92ca8ddb-7e81-46d7-9cc7-b4399c5a3ee0",
+      "name": "WordPress 博客",
+      "description": "使用 Docker 部署 WordPress 博客系统（请确保Docker已安装）",
+      "serviceType": "WordPress",
+      "category": "建站服务",
+      "commands": [
+        "mkdir -p {{wordpress_directory}}",
+        "cd {{wordpress_directory}} && cat > docker-compose.yml << 'EOF'\n{{wordpress_compose_config}}\nEOF",
+        "cd {{wordpress_directory}} && mkdir -p wordpress-data",
+        "cd {{wordpress_directory}} && mkdir -p mysql-data",
+        "cd {{wordpress_directory}} && docker compose up -d",
+        "echo '等待 WordPress 服务启动...'",
+        "sleep 30",
+        "cd {{wordpress_directory}} && docker compose ps",
+        "echo 'WordPress 部署完成！访问地址: http://{{server_ip}}:{{web_port}}'"
+      ],
+      "configTemplate": "version: '3.8'\nservices:\n  db:\n    image: mysql:8.0\n    container_name: wordpress-mysql\n    restart: always\n    environment:\n      - MYSQL_ROOT_PASSWORD={{mysql_root_password}}\n      - MYSQL_DATABASE={{db_name}}\n      - MYSQL_USER={{db_user}}\n      - MYSQL_PASSWORD={{db_password}}\n    volumes:\n      - ./mysql-data:/var/lib/mysql\n    networks:\n      - wordpress-network\n\n  wordpress:\n    image: wordpress:{{wordpress_version}}\n    container_name: wordpress\n    restart: always\n    ports:\n      - \"{{web_port}}:80\"\n    environment:\n      - WORDPRESS_DB_HOST=db:3306\n      - WORDPRESS_DB_NAME={{db_name}}\n      - WORDPRESS_DB_USER={{db_user}}\n      - WORDPRESS_DB_PASSWORD={{db_password}}\n      - WORDPRESS_TABLE_PREFIX={{table_prefix}}\n      - WORDPRESS_DEBUG={{debug_mode}}\n    volumes:\n      - ./wordpress-data:/var/www/html\n    depends_on:\n      - db\n    networks:\n      - wordpress-network\n\nnetworks:\n  wordpress-network:\n    driver: bridge",
+      "serviceTemplate": "",
+      "variables": [
+        {
+          "id": "210301f5-dd8a-48e6-b97e-a6685191b342",
+          "name": "wordpress_directory",
+          "description": "WordPress 安装目录",
+          "type": "string",
+          "defaultValue": "/opt/wordpress",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "0451f380-01f2-44d4-aa61-17d1c9f10050",
+          "name": "wordpress_version",
+          "description": "WordPress 版本",
+          "type": "select",
+          "defaultValue": "latest",
+          "required": true,
+          "options": ["latest", "6.4", "6.3", "6.2", "6.1", "6.0"]
+        },
+        {
+          "id": "12d0e974-cfb7-463c-9c11-8e09f6ca3720",
+          "name": "web_port",
+          "description": "Web 访问端口",
+          "type": "number",
+          "defaultValue": "8080",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "138b5e00-8fd6-4afd-b043-f6113b274d86",
+          "name": "server_ip",
+          "description": "服务器 IP 地址",
+          "type": "string",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "440b3d87-1691-4af2-b91f-abc33ffc03b6",
+          "name": "mysql_root_password",
+          "description": "MySQL Root 密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "894065f7-139c-4e73-b008-ed503bcc20f5",
+          "name": "db_name",
+          "description": "数据库名称",
+          "type": "string",
+          "defaultValue": "wordpress",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "c5cde8b3-60c1-4f11-9a9b-3ad5fc8830a1",
+          "name": "db_user",
+          "description": "数据库用户名",
+          "type": "string",
+          "defaultValue": "wp_user",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "6991a669-3b89-4829-902c-93ad75da59b8",
+          "name": "db_password",
+          "description": "数据库密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "a3ac74ea-963a-4f86-8170-a909ef4d00cb",
+          "name": "table_prefix",
+          "description": "数据表前缀",
+          "type": "string",
+          "defaultValue": "wp_",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "4e514d73-7cda-41ad-8380-bcb86d02aef3",
+          "name": "debug_mode",
+          "description": "调试模式",
+          "type": "select",
+          "defaultValue": "false",
+          "required": false,
+          "options": ["true", "false"]
+        }
+      ],
+      "tags": ["WordPress", "博客", "网站", "Docker", "CMS"],
+      "rating": 4.8,
+      "downloads": 3500,
+      "isOfficial": true
+    },
+    {
+      "id": "2a57f424-715a-45f5-b016-70bc5111eea1",
+      "name": "Sing-Box",
+      "description": "智能安装 SingBox 代理服务，自动检测系统架构并下载最新版本",
+      "serviceType": "sing-box",
+      "category": "网络服务",
+      "commands": [
+        "mkdir -p /tmp/singbox_install",
+        "cd /tmp/singbox_install && curl -L -o sing-box.tar.gz \"{{download_url}}\"",
+        "cd /tmp/singbox_install && tar -xzf sing-box.tar.gz",
+        "cd /tmp/singbox_install && sudo mv sing-box-*/sing-box /usr/local/bin/",
+        "sudo chmod +x /usr/local/bin/sing-box",
+        "sudo ln -sf /usr/local/bin/sing-box /usr/bin/sing-box",
+        "sudo mkdir -p /etc/sing-box",
+        "sudo mkdir -p /var/log/sing-box",
+        "sudo mkdir -p /var/lib/sing-box",
+        "sing-box version",
+        "cd / && sudo rm -rf /tmp/singbox_install"
+      ],
+      "configTemplate": "{\n    \"log\": {\n        \"level\": \"{{log_level}}\",\n        \"timestamp\": true,\n        \"output\": \"stdout\"\n    },\n    \"inbounds\": [\n        {\n            \"type\": \"{{protocol}}\",\n            \"tag\": \"in\",\n            \"listen\": \"0.0.0.0\",\n            \"listen_port\": {{port}},\n            \"password\": \"{{password}}\",\n            \"method\": \"{{method}}\"\n        }\n    ],\n    \"outbounds\": [\n        {\n            \"type\": \"direct\",\n            \"tag\": \"direct\"\n        }\n    ],\n    \"route\": {\n        \"rules\": [\n            {\n                \"geoip\": \"private\",\n                \"outbound\": \"direct\"\n            }\n        ]\n    }\n}",
+      "serviceTemplate": "[Unit]\nDescription=sing-box service\nDocumentation=https://sing-box.sagernet.org\nAfter=network.target nss-lookup.target\n\n[Service]\nType=simple\nUser=root\nGroup=root\nCapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE\nAmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE\nExecStart=/usr/local/bin/sing-box run -c /etc/sing-box/config.json\nRestart=on-failure\nRestartSec=1s\nLimitNOFILE=infinity\n\n[Install]\nWantedBy=multi-user.target",
+      "variables": [
+        {
+          "id": "d6f44074-1161-48e2-9167-9a2405a7b2ed",
+          "name": "protocol",
+          "description": "代理协议",
+          "type": "select",
+          "defaultValue": "shadowsocks",
+          "required": true,
+          "options": ["shadowsocks", "vmess", "trojan", "hysteria2", "tuic"]
+        },
+        {
+          "id": "9919cda3-a6df-4fb5-b69e-9922655a1b15",
+          "name": "port",
+          "description": "监听端口",
+          "type": "number",
+          "defaultValue": "8080",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "695d9fd2-1221-4a95-b51a-bfa1e4cd706d",
+          "name": "password",
+          "description": "密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "f0589223-5c55-49eb-b17f-77becf7cc0a4",
+          "name": "method",
+          "description": "加密方法",
+          "type": "select",
+          "defaultValue": "aes-256-gcm",
+          "required": true,
+          "options": ["aes-256-gcm", "aes-128-gcm", "chacha20-poly1305", "none"]
+        },
+        {
+          "id": "0fd9d4e6-c9b5-445f-9485-e61bb30f526c",
+          "name": "log_level",
+          "description": "日志级别",
+          "type": "select",
+          "defaultValue": "info",
+          "required": false,
+          "options": ["debug", "info", "warning", "error"]
+        }
+      ],
+      "tags": ["SingBox", "代理", "智能安装", "自动检测", "最新版本"],
+      "rating": 4.9,
+      "downloads": 4200,
+      "isOfficial": true
+    },
+    {
+      "id": "13474174-1eda-49e7-a093-2f0aa9d1b1b1",
+      "name": "FRP 服务端",
+      "description": "部署 FRP 服务端，用于内网穿透",
+      "serviceType": "FRP",
+      "category": "网络服务",
+      "commands": [
+        "mkdir -p /tmp/frp_install",
+        "cd /tmp/frp_install && curl -L -o frp.tar.gz \"{{download_url}}\"",
+        "cd /tmp/frp_install && tar -xzf frp.tar.gz",
+        "cd /tmp/frp_install && sudo mv frp_*/frps /usr/local/bin/",
+        "sudo chmod +x /usr/local/bin/frps",
+        "sudo mkdir -p /etc/frp",
+        "sudo mkdir -p /var/log/frp",
+        "frps version",
+        "cd / && sudo rm -rf /tmp/frp_install"
+      ],
+      "configTemplate": "[common]\nbind_port = {{bind_port}}\ndashboard_port = {{dashboard_port}}\ndashboard_user = {{dashboard_user}}\ndashboard_pwd = {{dashboard_pwd}}\ntoken = {{token}}\nlog_file = /var/log/frp/frps.log\nlog_level = {{log_level}}\nlog_max_days = 3\ndetailed_errors_to_client = false",
+      "serviceTemplate": "[Unit]\nDescription=FRP Server\nAfter=network.target\n\n[Service]\nType=simple\nUser=root\nGroup=root\nExecStart=/usr/local/bin/frps -c /etc/frp/frps.ini\nRestart=on-failure\nRestartSec=5s\n\n[Install]\nWantedBy=multi-user.target",
+      "variables": [
+        {
+          "id": "06187082-653a-47f5-8987-86f426977682",
+          "name": "bind_port",
+          "description": "FRP 服务端口",
+          "type": "number",
+          "defaultValue": "7000",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "7f6227cd-8e15-4edf-85d6-258f37c244d5",
+          "name": "dashboard_port",
+          "description": "管理面板端口",
+          "type": "number",
+          "defaultValue": "7500",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "8af0eb7c-7f8a-45f0-be42-bb6d01da9e79",
+          "name": "dashboard_user",
+          "description": "管理面板用户名",
+          "type": "string",
+          "defaultValue": "admin",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "2d66268d-63b3-42a4-9505-f505f4a22456",
+          "name": "dashboard_pwd",
+          "description": "管理面板密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "d9424ce6-e32f-46e1-8a99-027568b626e8",
+          "name": "token",
+          "description": "认证令牌",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "1f060e41-f931-4323-a2de-52aa173c7929",
+          "name": "log_level",
+          "description": "日志级别",
+          "type": "select",
+          "defaultValue": "info",
+          "required": false,
+          "options": ["debug", "info", "warning", "error"]
+        }
+      ],
+      "tags": ["FRP", "内网穿透", "服务端", "代理"],
+      "rating": 4.7,
+      "downloads": 2800,
+      "isOfficial": true
+    },
+    {
+      "id": "73a0d821-fa0c-4a38-86da-c72062c775b5",
+      "name": "FRP 客户端",
+      "description": "部署 FRP 客户端，连接服务端进行内网穿透",
+      "serviceType": "FRP",
+      "category": "网络服务",
+      "commands": [
+        "mkdir -p /tmp/frp_install",
+        "cd /tmp/frp_install && curl -L -o frp.tar.gz \"{{download_url}}\"",
+        "cd /tmp/frp_install && tar -xzf frp.tar.gz",
+        "cd /tmp/frp_install && sudo mv frp_*/frpc /usr/local/bin/",
+        "sudo chmod +x /usr/local/bin/frpc",
+        "sudo mkdir -p /etc/frp",
+        "sudo mkdir -p /var/log/frp",
+        "frpc version",
+        "cd / && sudo rm -rf /tmp/frp_install"
+      ],
+      "configTemplate": "[common]\nserver_addr = {{server_addr}}\nserver_port = {{server_port}}\ntoken = {{token}}\nlog_file = /var/log/frp/frpc.log\nlog_level = {{log_level}}\nlog_max_days = 3\n\n[{{proxy_name}}]\ntype = {{proxy_type}}\nlocal_ip = {{local_ip}}\nlocal_port = {{local_port}}\nremote_port = {{remote_port}}",
+      "serviceTemplate": "[Unit]\nDescription=FRP Client\nAfter=network.target\n\n[Service]\nType=simple\nUser=root\nGroup=root\nExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.ini\nRestart=on-failure\nRestartSec=5s\n\n[Install]\nWantedBy=multi-user.target",
+      "variables": [
+        {
+          "id": "d98f54d0-b9c9-40b7-8898-484a49a044a5",
+          "name": "server_addr",
+          "description": "FRP 服务端地址",
+          "type": "string",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "1bf37751-1e27-444f-befb-b15941f6249f",
+          "name": "server_port",
+          "description": "FRP 服务端端口",
+          "type": "number",
+          "defaultValue": "7000",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "12670343-15bd-44e7-959d-3e50ab88a7e8",
+          "name": "token",
+          "description": "认证令牌",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "0953c77d-c84f-480b-accf-fe53ab268fbe",
+          "name": "proxy_name",
+          "description": "代理名称",
+          "type": "string",
+          "defaultValue": "web",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "aa3a8b3f-771e-4196-816d-3d8a2ed18b48",
+          "name": "proxy_type",
+          "description": "代理类型",
+          "type": "select",
+          "defaultValue": "tcp",
+          "required": true,
+          "options": ["tcp", "udp", "http", "https"]
+        },
+        {
+          "id": "e4ac786b-c380-4339-bbc5-24e7d5a0f598",
+          "name": "local_ip",
+          "description": "本地IP",
+          "type": "string",
+          "defaultValue": "127.0.0.1",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "42f322ff-f356-4b8a-9432-506ff98d1cf5",
+          "name": "local_port",
+          "description": "本地端口",
+          "type": "number",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "4cbe9cc3-af97-4814-8d63-4d6bbf14ba0e",
+          "name": "remote_port",
+          "description": "远程端口",
+          "type": "number",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "c677abbb-073b-4c5d-989b-fe0bf19aef3a",
+          "name": "log_level",
+          "description": "日志级别",
+          "type": "select",
+          "defaultValue": "info",
+          "required": false,
+          "options": ["debug", "info", "warning", "error"]
+        }
+      ],
+      "tags": ["FRP", "内网穿透", "客户端", "代理"],
+      "rating": 4.6,
+      "downloads": 2200,
+      "isOfficial": true
+    },
+    {
+      "id": "9b183825-a1a3-4d6f-80d8-ace44d36a453",
+      "name": "Docker 环境",
+      "description": "安装 Docker 和 Docker Compose 环境",
+      "serviceType": "Docker",
+      "category": "开发运维",
+      "commands": [
+        "sudo apt update",
+        "sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release",
+        "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
+        "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+        "sudo apt update",
+        "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin",
+        "sudo systemctl enable docker",
+        "sudo systemctl start docker",
+        "sudo usermod -aG docker $USER",
+        "docker --version",
+        "docker compose version"
+      ],
+      "configTemplate": "",
+      "serviceTemplate": "",
+      "variables": [
+        {
+          "id": "fdfc36ea-824c-4cb2-9158-782464c57d25",
+          "name": "docker_user",
+          "description": "Docker 用户组",
+          "type": "string",
+          "defaultValue": "$USER",
+          "required": false,
+          "options": null
+        }
+      ],
+      "tags": ["Docker", "容器", "DevOps", "环境"],
+      "rating": 4.8,
+      "downloads": 3800,
+      "isOfficial": true
+    },
+    {
+      "id": "43e0333b-073c-498c-9353-c798379cbef8",
+      "name": "Docker Compose 应用",
+      "description": "使用 Docker Compose 部署多容器应用",
+      "serviceType": "Docker",
+      "category": "开发运维",
+      "commands": [
+        "mkdir -p {{app_directory}}",
+        "cd {{app_directory}}",
+        "cat > docker-compose.yml << 'EOF'\n{{docker_compose_config}}\nEOF",
+        "docker compose up -d",
+        "docker compose ps"
+      ],
+      "configTemplate": "version: '3.8'\nservices:\n  app:\n    image: {{image_name}}\n    container_name: {{container_name}}\n    ports:\n      - \"{{host_port}}:{{container_port}}\"\n    environment:\n      - NODE_ENV={{node_env}}\n    volumes:\n      - ./data:/app/data\n    restart: unless-stopped",
+      "serviceTemplate": "",
+      "variables": [
+        {
+          "id": "9c414e82-16a5-463f-bd97-278f47b5d3ad",
+          "name": "app_directory",
+          "description": "应用目录",
+          "type": "string",
+          "defaultValue": "/opt/docker-app",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "2868f7c7-517d-420d-b660-b7a5f6d9c916",
+          "name": "image_name",
+          "description": "Docker 镜像名称",
+          "type": "string",
+          "defaultValue": "nginx:alpine",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "365bfe7a-9d7f-48cd-9aa1-89ab3e9293b3",
+          "name": "container_name",
+          "description": "容器名称",
+          "type": "string",
+          "defaultValue": "my-app",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "39a27225-e806-472e-91f6-f743fdc1e0c0",
+          "name": "host_port",
+          "description": "主机端口",
+          "type": "number",
+          "defaultValue": "8080",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "3a662b68-f43d-4c07-9575-12543b21e755",
+          "name": "container_port",
+          "description": "容器端口",
+          "type": "number",
+          "defaultValue": "80",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "869dfb6c-eb3c-4763-ab49-199b9db3782b",
+          "name": "node_env",
+          "description": "环境变量",
+          "type": "select",
+          "defaultValue": "production",
+          "required": false,
+          "options": ["development", "production", "test"]
+        }
+      ],
+      "tags": ["Docker", "Compose", "容器", "应用部署"],
+      "rating": 4.7,
+      "downloads": 3100,
+      "isOfficial": true
+    },
+    {
+      "id": "27da793c-07b7-4fb5-a5c2-c62ca5be57a7",
+      "name": "Docker 网络代理",
+      "description": "部署基于 Docker 的网络代理服务",
+      "serviceType": "Docker",
+      "category": "网络服务",
+      "commands": [
+        "mkdir -p {{proxy_directory}}",
+        "cd {{proxy_directory}} && cat > docker-compose.yml << 'EOF'\n{{proxy_compose_config}}\nEOF",
+        "cd {{proxy_directory}} && docker compose up -d",
+        "cd {{proxy_directory}} && docker compose logs -f"
+      ],
+      "configTemplate": "version: '3.8'\nservices:\n  {{proxy_service}}:\n    image: {{proxy_image}}\n    container_name: {{proxy_container_name}}\n    ports:\n      - \"{{proxy_port}}:{{proxy_container_port}}\"\n    environment:\n      - PASSWORD={{proxy_password}}\n      - METHOD={{proxy_method}}\n      - SERVER_PORT={{proxy_container_port}}\n    volumes:\n      - ./config:/etc/{{proxy_service}}\n    restart: unless-stopped",
+      "serviceTemplate": "",
+      "variables": [
+        {
+          "id": "c8953a76-faf4-41f4-9682-9638eb695ab2",
+          "name": "proxy_directory",
+          "description": "代理目录",
+          "type": "string",
+          "defaultValue": "/opt/docker-proxy",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "d725fb4e-5504-46bb-8790-415aab8c291c",
+          "name": "proxy_service",
+          "description": "代理服务名称",
+          "type": "select",
+          "defaultValue": "shadowsocks",
+          "required": true,
+          "options": ["shadowsocks", "v2ray", "xray", "sing-box"]
+        },
+        {
+          "id": "9dcdfbe4-6852-4bdc-b65b-c40023fd774c",
+          "name": "proxy_image",
+          "description": "代理镜像",
+          "type": "string",
+          "defaultValue": "shadowsocks/ssserver-rust:latest",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "9b408fab-1f3e-460c-8501-ec8889fd7c1f",
+          "name": "proxy_container_name",
+          "description": "容器名称",
+          "type": "string",
+          "defaultValue": "proxy-server",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "09f477bc-cdf2-4a39-8ee3-4db70a6e8409",
+          "name": "proxy_port",
+          "description": "代理端口",
+          "type": "number",
+          "defaultValue": "8388",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "ca2cc5f6-868b-4496-b46b-abdd421dd62f",
+          "name": "proxy_container_port",
+          "description": "容器端口",
+          "type": "number",
+          "defaultValue": "8388",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "e55ca591-8285-4142-9987-4b3ee9de7a94",
+          "name": "proxy_password",
+          "description": "代理密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "8478bdb5-1d84-4f60-aec4-9ac59b0dd885",
+          "name": "proxy_method",
+          "description": "加密方法",
+          "type": "select",
+          "defaultValue": "aes-256-gcm",
+          "required": true,
+          "options": ["aes-256-gcm", "chacha20-poly1305", "aes-128-gcm"]
+        }
+      ],
+      "tags": ["Docker", "代理", "网络", "容器"],
+      "rating": 4.5,
+      "downloads": 1900,
+      "isOfficial": true
+    },
+    {
+      "id": "d9b9f3cd-9c3f-42b1-8719-10f810744fdd",
+      "name": "Seafile 私有云存储",
+      "description": "部署 Seafile 私有云存储服务，提供类似 Dropbox 的文件同步功能（请确保Docker已安装）",
+      "serviceType": "Seafile",
+      "category": "存储服务",
+      "commands": [
+        "mkdir -p {{seafile_directory}}",
+        "cd {{seafile_directory}} && cat > docker-compose.yml << 'EOF'\n{{seafile_compose_config}}\nEOF",
+        "cd {{seafile_directory}} && mkdir -p seafile-data",
+        "cd {{seafile_directory}} && mkdir -p mysql-data",
+        "cd {{seafile_directory}} && docker compose up -d",
+        "echo '等待 Seafile 服务启动...'",
+        "sleep 30",
+        "cd {{seafile_directory}} && docker compose ps",
+        "echo 'Seafile 部署完成！访问地址: http://{{server_ip}}:{{web_port}}'"
+      ],
+      "configTemplate": "version: '3.8'\nservices:\n  db:\n    image: mariadb:10.7\n    container_name: seafile-mysql\n    restart: always\n    environment:\n      - MYSQL_ROOT_PASSWORD={{mysql_root_password}}\n      - MYSQL_DATABASE=seafile\n      - MYSQL_USER=seafile\n      - MYSQL_PASSWORD={{mysql_password}}\n    volumes:\n      - ./mysql-data:/var/lib/mysql\n    networks:\n      - seafile-network\n\n  memcached:\n    image: memcached:1.6\n    container_name: seafile-memcached\n    restart: always\n    entrypoint: memcached -m 256\n    networks:\n      - seafile-network\n\n  seafile:\n    image: seafileltd/seafile:{{seafile_version}}\n    container_name: seafile\n    restart: always\n    ports:\n      - \"{{web_port}}:80\"\n    volumes:\n      - ./seafile-data:/shared\n    environment:\n      - DB_HOST=db\n      - DB_ROOT_PASSWD={{mysql_root_password}}\n      - TIME_ZONE={{timezone}}\n      - SEAFILE_ADMIN_EMAIL={{admin_email}}\n      - SEAFILE_ADMIN_PASSWORD={{admin_password}}\n      - SEAFILE_SERVER_LETSENCRYPT=false\n      - SEAFILE_SERVER_HOSTNAME={{server_ip}}\n    depends_on:\n      - db\n      - memcached\n    networks:\n      - seafile-network\n\nnetworks:\n  seafile-network:\n    driver: bridge",
+      "serviceTemplate": "",
+      "variables": [
+        {
+          "id": "4c8ebc50-22da-4e58-892f-e69a2650e155",
+          "name": "seafile_directory",
+          "description": "Seafile 安装目录",
+          "type": "string",
+          "defaultValue": "/opt/seafile",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "dbd2b172-65bc-46ac-b90d-5748287549aa",
+          "name": "seafile_version",
+          "description": "Seafile 版本",
+          "type": "select",
+          "defaultValue": "latest",
+          "required": true,
+          "options": ["latest", "9.0", "8.0", "7.1"]
+        },
+        {
+          "id": "244fb6ec-b40d-4ad7-96d5-1fc622e18907",
+          "name": "web_port",
+          "description": "Web 访问端口",
+          "type": "number",
+          "defaultValue": "8000",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "36a5c5ad-e5ee-43fa-9b8f-8bdba52c21a1",
+          "name": "server_ip",
+          "description": "服务器 IP 地址",
+          "type": "string",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "ad854a28-a3e3-4280-b2ed-7c0cf05a1175",
+          "name": "mysql_root_password",
+          "description": "MySQL Root 密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "f7ae0c4d-569f-4932-a4bb-9864de0246f9",
+          "name": "mysql_password",
+          "description": "MySQL Seafile 用户密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "43683763-9cfd-4642-9273-1bea4399291a",
+          "name": "admin_email",
+          "description": "管理员邮箱",
+          "type": "string",
+          "defaultValue": "admin@example.com",
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "297b9716-b51c-4f43-91ac-1e5251e41186",
+          "name": "admin_password",
+          "description": "管理员密码",
+          "type": "password",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "3048b74e-cb20-493d-ac78-27a2fb103e4e",
+          "name": "timezone",
+          "description": "时区设置",
+          "type": "select",
+          "defaultValue": "Asia/Shanghai",
+          "required": false,
+          "options": [
+            "Asia/Shanghai",
+            "UTC",
+            "America/New_York",
+            "Europe/London"
+          ]
+        }
+      ],
+      "tags": ["Seafile", "私有云", "文件同步", "存储", "Docker"],
+      "rating": 4.6,
+      "downloads": 1800,
+      "isOfficial": true
+    }
+  ]
+}
