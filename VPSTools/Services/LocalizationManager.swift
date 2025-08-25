@@ -148,6 +148,15 @@ enum LocalizationKey: String, CaseIterable {
     case serviceStatus = "service_status"
     case autoRefreshDescription = "auto_refresh_description"
     case monitorViewTitle = "monitor_view_title"
+    case cpuUsage = "cpu_usage"
+    case memoryUsage = "memory_usage"
+    case toggleAutoRefresh = "toggle_auto_refresh"
+    case autoRefreshInterval = "auto_refresh_interval"
+    case instuction = "instuction"
+    case done =  "done"
+    case hour = "hour"
+    case day = "day"
+    case back = "back"
     
     // Deployment
     case confirmDeleteDeployment = "confirm_delete_deployment"
@@ -321,6 +330,9 @@ enum LocalizationKey: String, CaseIterable {
     case completed = "completed"
     case failed = "failed"
     case cancelled = "cancelled"
+    case online = "online"
+    case offline = "offline"
+    case unknown = "unknown"
     
     // VPS Management
     case all = "all"
@@ -440,6 +452,15 @@ enum LocalizationKey: String, CaseIterable {
             .serviceStatus: "服务状态",
             .autoRefreshDescription: "自动刷新会定期更新 VPS 状态和系统信息，可能会消耗一定的网络流量。",
             .monitorViewTitle: "监控中心",
+            .cpuUsage: "平均 CPU",
+            .memoryUsage: "平均内存",
+            .toggleAutoRefresh: "启用自动刷新",
+            .autoRefreshInterval: "刷新间隔",
+            .instuction: "说明",
+            .done: "完成",
+            .hour: "小时",
+            .day: "天",
+            .back: "返回",
             
             // Deployment
             .confirmDeleteDeployment: "确定要删除这个部署任务吗？此操作无法撤销。",
@@ -616,6 +637,9 @@ enum LocalizationKey: String, CaseIterable {
             .completed: "已完成",
             .failed: "失败",
             .cancelled: "已取消",
+            .online: "在线",
+            .offline: "离线",
+            .unknown: "未知",
             
             // VPS Management
             .all: "全部",
@@ -647,6 +671,7 @@ enum LocalizationKey: String, CaseIterable {
             .smartDeployment: "Smart Deployment",
             .monitoring: "Monitoring",
             .settings: "Settings",
+            
             
             // Home View
             .welcomeBack: "Welcome Back",
@@ -718,6 +743,15 @@ enum LocalizationKey: String, CaseIterable {
             .serviceStatus: "Service Status",
             .autoRefreshDescription: "Auto refresh will periodically update VPS status and system information, which may consume some network traffic.",
             .monitorViewTitle: "Monitoring Center",
+            .cpuUsage: "CPU Usage",
+            .memoryUsage: "Memory Usage",
+            .toggleAutoRefresh: "Enable Auto Refresh",
+            .autoRefreshInterval: "Refresh Interval",
+            .instuction: "Instruction",
+            .done: "Done",
+            .hour: "Hours",
+            .day: "Days",
+            .back: "Back",
             
             // Deployment
             .confirmDeleteDeployment: "Are you sure you want to delete this deployment task? This action cannot be undone.",
@@ -894,6 +928,9 @@ enum LocalizationKey: String, CaseIterable {
             .completed: "Completed",
             .failed: "Failed",
             .cancelled: "Cancelled",
+            .online:  "Online",
+            .offline: "Offline",
+            .unknown: "Unknown",
             
             // VPS Management
             .all: "All",

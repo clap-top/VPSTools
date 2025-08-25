@@ -155,7 +155,7 @@ struct MonitoringView: View {
                 GridItem(.flexible())
             ], spacing: 12) {
                 OverviewCard(
-                    title: "在线 VPS",
+                    title: LocalizationManager.shared.localizedString(.onlineVPS),
                     value: "\(onlineVPSCount)",
                     total: "\(vpsManager.vpsInstances.count)",
                     icon: "server.rack",
@@ -163,7 +163,7 @@ struct MonitoringView: View {
                 )
                 
                 OverviewCard(
-                    title: "平均 CPU",
+                    title: LocalizationManager.shared.localizedString(.cpuUsage),
                     value: "\(Int(averageCPUUsage))%",
                     total: "",
                     icon: "cpu",
@@ -171,7 +171,7 @@ struct MonitoringView: View {
                 )
                 
                 OverviewCard(
-                    title: "平均内存",
+                    title: LocalizationManager.shared.localizedString(.memoryUsage),
                     value: "\(Int(averageMemoryUsage))%",
                     total: "",
                     icon: "memorychip",
@@ -361,21 +361,21 @@ struct VPSMonitoringCard: View {
                 if let systemInfo = vps.systemInfo {
                     HStack(spacing: 16) {
                         PerformanceIndicator(
-                            title: "CPU",
-                            value: "\(systemInfo.cpuCores)核",
+                            title: LocalizationManager.shared.localizedString(.cpu),
+                            value: "\(systemInfo.cpuCores)\(LocalizationManager.shared.localizedString(.cpuCores))",
                             icon: "cpu",
                             color: .blue
                         )
                         
                         PerformanceIndicator(
-                            title: "内存",
+                            title: LocalizationManager.shared.localizedString(.memory),
                             value: "\(Int(systemInfo.memoryUsage))%",
                             icon: "memorychip",
                             color: memoryUsageColor(systemInfo.memoryUsage)
                         )
                         
                         PerformanceIndicator(
-                            title: "磁盘",
+                            title: LocalizationManager.shared.localizedString(.disk),
                             value: "\(Int(systemInfo.diskUsage))%",
                             icon: "externaldrive",
                             color: diskUsageColor(systemInfo.diskUsage)
@@ -416,9 +416,9 @@ struct VPSMonitoringCard: View {
     
     private var connectionStatusText: String {
         if let testResult = vpsManager.connectionTestResults[vps.id] {
-            return testResult.sshSuccess ? "在线" : "离线"
+            return testResult.sshSuccess ? LocalizationManager.shared.localizedString(.online) : LocalizationManager.shared.localizedString(.offline)
         }
-        return "未知"
+        return LocalizationManager.shared.localizedString(.unknown)
     }
     
     private func memoryUsageColor(_ usage: Double) -> Color {
@@ -473,11 +473,11 @@ struct MonitoringSettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("自动刷新") {
-                    Toggle("启用自动刷新", isOn: $isAutoRefresh)
+                Section(LocalizationManager.shared.localizedString(.autoRefresh)) {
+                    Toggle(LocalizationManager.shared.localizedString(.toggleAutoRefresh), isOn: $isAutoRefresh)
                     
                     if isAutoRefresh {
-                        Picker("刷新间隔", selection: $refreshInterval) {
+                        Picker(LocalizationManager.shared.localizedString(.autoRefreshInterval), selection: $refreshInterval) {
                             Text("15\(String(.secondsShort))").tag(TimeInterval(15))
                             Text("30\(String(.secondsShort))").tag(TimeInterval(30))
                             Text("1\(String(.minutesShort))").tag(TimeInterval(60))
@@ -486,17 +486,17 @@ struct MonitoringSettingsView: View {
                     }
                 }
                 
-                Section("说明") {
+                Section(LocalizationManager.shared.localizedString(.insttructions)) {
                     Text(.autoRefreshDescription)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
-            .navigationTitle("Monitoring Settings")
+            .navigationTitle(LocalizationManager.shared.localizedString(.monitoringSettings))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(LocalizationManager.shared.localizedString(.done)) {
                         dismiss()
                     }
                 }
@@ -516,10 +516,10 @@ struct VPSMonitoringDetailView: View {
     @State private var showingCharts = true
     
     enum TimeRange: String, CaseIterable {
-        case hour = "1小时"
-        case day = "24小时"
-        case week = "7天"
-        case month = "30天"
+        case hour = "1\(LocalizationManager.shared.localizedString(.hour))"
+        case day = "24\(LocalizationManager.shared.localizedString(.hour))"
+        case week = "7\(LocalizationManager.shared.localizedString(.day))"
+        case month = "30\(LocalizationManager.shared.localizedString(.day))"
     }
     
     var body: some View {
@@ -549,7 +549,7 @@ struct VPSMonitoringDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("返回") {
+                    Button(LocalizationManager.shared.localizedString(.back)) {
                         dismiss()
                     }
                 }
