@@ -486,7 +486,7 @@ struct MonitoringSettingsView: View {
                     }
                 }
                 
-                Section(LocalizationManager.shared.localizedString(.insttructions)) {
+                Section(LocalizationManager.shared.localizedString(.instruction)) {
                     Text(.autoRefreshDescription)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -516,10 +516,10 @@ struct VPSMonitoringDetailView: View {
     @State private var showingCharts = true
     
     enum TimeRange: String, CaseIterable {
-        case hour = "1\(LocalizationManager.shared.localizedString(.hour))"
-        case day = "24\(LocalizationManager.shared.localizedString(.hour))"
-        case week = "7\(LocalizationManager.shared.localizedString(.day))"
-        case month = "30\(LocalizationManager.shared.localizedString(.day))"
+        case hour = "1小时"
+        case day = "24小时"
+        case week = "7天"
+        case month = "30天"
     }
     
     var body: some View {

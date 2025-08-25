@@ -152,7 +152,7 @@ enum LocalizationKey: String, CaseIterable {
     case memoryUsage = "memory_usage"
     case toggleAutoRefresh = "toggle_auto_refresh"
     case autoRefreshInterval = "auto_refresh_interval"
-    case instuction = "instuction"
+    case instruction = "instruction"
     case done =  "done"
     case hour = "hour"
     case day = "day"
@@ -435,7 +435,7 @@ enum LocalizationKey: String, CaseIterable {
             .error: "错误: %@",
             .noConnectionTest: "未进行连接测试",
             .detecting: "检测中...",
-            .port: "端口: %@",
+            .port: "端口",
             .deployViewTitle: "智能部署",
             
             // Monitoring
@@ -456,7 +456,7 @@ enum LocalizationKey: String, CaseIterable {
             .memoryUsage: "平均内存",
             .toggleAutoRefresh: "启用自动刷新",
             .autoRefreshInterval: "刷新间隔",
-            .instuction: "说明",
+            .instruction: "说明",
             .done: "完成",
             .hour: "小时",
             .day: "天",
@@ -726,7 +726,7 @@ enum LocalizationKey: String, CaseIterable {
             .error: "Error: %@",
             .noConnectionTest: "No connection test performed",
             .detecting: "Detecting...",
-            .port: "Port: %@",
+            .port: "Port",
             .deployViewTitle: "Smart Deployment",
             
             // Monitoring
@@ -747,7 +747,7 @@ enum LocalizationKey: String, CaseIterable {
             .memoryUsage: "Memory Usage",
             .toggleAutoRefresh: "Enable Auto Refresh",
             .autoRefreshInterval: "Refresh Interval",
-            .instuction: "Instruction",
+            .instruction: "Instruction",
             .done: "Done",
             .hour: "Hours",
             .day: "Days",
