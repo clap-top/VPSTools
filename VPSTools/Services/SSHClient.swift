@@ -554,7 +554,7 @@ class SSHClient {
       if(vps.password != nil) {
         authResult = await client.authenticate(password: vps.password ?? "")
       } else if(vps.privateKey != nil) {
-        authResult = await client.authenticate(privateKey: vps.privateKey ?? "", passphrase: vps.keyPassphrase ?? "")
+        authResult = await client.authenticate(privateKey: vps.privateKey ?? "", passphrase: vps.privateKeyPhrase ?? "")
       }
       print("认证结果: \(authResult)")
       

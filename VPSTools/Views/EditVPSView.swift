@@ -13,7 +13,7 @@ struct EditVPSView: View {
     @State private var username: String
     @State private var password: String
     @State private var privateKey: String
-    @State private var keyPassphrase: String
+    @State private var privateKeyPhrase: String
     @State private var group: String
     @State private var tags: String
     @State private var authMethod: AuthMethod
@@ -30,7 +30,7 @@ struct EditVPSView: View {
         _username = State(initialValue: vps.username)
         _password = State(initialValue: vps.password ?? "")
         _privateKey = State(initialValue: vps.privateKey ?? "")
-        _keyPassphrase = State(initialValue: vps.keyPassphrase ?? "")
+        _privateKeyPhrase = State(initialValue: vps.privateKeyPhrase ?? "")
         _group = State(initialValue: vps.group)
         _tags = State(initialValue: vps.tags.joined(separator: ", "))
         _authMethod = State(initialValue: vps.password != nil ? .password : .privateKey)
@@ -39,16 +39,16 @@ struct EditVPSView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("基本信息") {
-                    TextField("VPS 名称", text: $name)
-                    TextField("主机地址", text: $host)
-                    TextField("端口", text: $port)
+                Section(LocalizationManager.shared.localizedString(.basicInfo)) {
+                    TextField(LocalizationManager.shared.localizedString(.vpsName), text: $name)
+                    TextField(LocalizationManager.shared.localizedString(.hostAddress), text: $host)
+                    TextField(LocalizationManager.shared.localizedString(.port), text: $port)
                         .keyboardType(.numberPad)
-                    TextField("用户名", text: $username)
+                    TextField(LocalizationManager.shared.localizedString(.username), text: $username)
                 }
                 
-                Section("认证方式") {
-                    Picker("认证方式", selection: $authMethod) {
+                Section(LocalizationManager.shared.localizedString(.authMethod)) {
+                    Picker(LocalizationManager.shared.localizedString(.authMethod), selection: $authMethod) {
                         ForEach(AuthMethod.allCases, id: \.self) { method in
                             Text(method.displayName).tag(method)
                         }
@@ -56,15 +56,16 @@ struct EditVPSView: View {
                     .pickerStyle(SegmentedPickerStyle())
                     
                     if authMethod == .password {
-                        SecureField("密码", text: $password)
+                        SecureField(LocalizationManager.shared.localizedString(.password), text: $password)
                     } else {
-                        TextField("SSH 密钥", text: $privateKey)
+                        TextField(LocalizationManager.shared.localizedString(.privateKey), text: $privateKey)
+                        TextField(LocalizationManager.shared.localizedString(.privateKeyPhrase), text: $privateKeyPhrase)
                     }
                 }
                 
-                Section("分组和标签") {
-                    TextField("分组", text: $group)
-                    TextField("标签（用逗号分隔）", text: $tags)
+                Section(LocalizationManager.shared.localizedString(.groupAndTags)) {
+                    TextField(LocalizationManager.shared.localizedString(.group), text: $group)
+                    TextField(LocalizationManager.shared.localizedString(.tagsCommaSeparated), text: $tags)
                 }
                 
                 if !errorMessage.isEmpty {
@@ -74,11 +75,11 @@ struct EditVPSView: View {
                     }
                 }
             }
-            .navigationTitle("Edit VPS")
+            .navigationTitle(LocalizationManager.shared.localizedString(.editVPS))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(LocalizationManager.shared.localizedString(.cancel)) {
                         dismiss()
                     }
                 }
@@ -174,9 +175,9 @@ enum AuthMethod: String, CaseIterable {
     var displayName: String {
         switch self {
         case .password:
-            return "密码"
+            return LocalizationManager.shared.localizedString(.password)
         case .privateKey:
-            return "密钥"
+            return LocalizationManager.shared.localizedString(.privateKey)
         }
     }
 }

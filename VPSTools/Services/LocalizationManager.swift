@@ -100,6 +100,7 @@ enum LocalizationKey: String, CaseIterable {
     
     // VPS Management
     case addVPS = "add_vps"
+    case editVPS = "edit_vps"
     case addFirstVPSToStart = "add_first_vps_to_start"
     case testConnection = "test_connection"
     case edit = "edit"
@@ -329,6 +330,7 @@ enum LocalizationKey: String, CaseIterable {
     case authMethod = "auth_method"
     case password = "password"
     case privateKey = "private_key"
+    case privateKeyPhrase = "private_key_phrase"
     case groupAndTags = "group_and_tags"
     case group = "group"
     case tagsCommaSeparated = "tags_comma_separated"
@@ -389,6 +391,7 @@ enum LocalizationKey: String, CaseIterable {
             
             // VPS Management
             .addVPS: "添加 VPS",
+            .editVPS: "编辑 VPS",
             .addFirstVPSToStart: "添加您的第一个 VPS 服务器开始管理",
             .testConnection: "测试连接",
             .edit: "编辑",
@@ -621,6 +624,7 @@ enum LocalizationKey: String, CaseIterable {
             .authMethod: "认证方式",
             .password: "密码",
             .privateKey: "SSH 密钥",
+            .privateKeyPhrase: "密钥密码(可选)",
             .groupAndTags: "分组和标签",
             .group: "分组",
             .tagsCommaSeparated: "标签（用逗号分隔）",
@@ -664,6 +668,7 @@ enum LocalizationKey: String, CaseIterable {
             
             // VPS Management
             .addVPS: "Add VPS",
+            .editVPS: "Edit VPS",
             .addFirstVPSToStart: "Add your first VPS server to start managing",
             .testConnection: "Test Connection",
             .edit: "Edit",
@@ -896,6 +901,7 @@ enum LocalizationKey: String, CaseIterable {
             .authMethod: "Auth Method",
             .password: "Password",
             .privateKey: "SSH Key",
+            .privateKeyPhrase: "SSH Key Password(Optional)",
             .groupAndTags: "Group & Tags",
             .group: "Group",
             .tagsCommaSeparated: "Tags (comma separated)",

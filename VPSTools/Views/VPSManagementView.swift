@@ -429,9 +429,10 @@ struct AddVPSView: View {
     @State private var name = ""
     @State private var host = ""
     @State private var port = "22"
-    @State private var username = ""
+    @State private var username = "root"
     @State private var password = ""
     @State private var privateKey = ""
+    @State private var privateKeyPhrase = ""
     @State private var group = LocalizationManager.shared.localizedString(.defaultGroup)
     @State private var tags = ""
     @State private var authMethod: AuthMethod = .password
@@ -461,6 +462,7 @@ struct AddVPSView: View {
                         SecureField(LocalizationManager.shared.localizedString(.password), text: $password)
                     } else {
                         TextField(LocalizationManager.shared.localizedString(.privateKey), text: $privateKey)
+                        TextField(LocalizationManager.shared.localizedString(.privateKeyPhrase), text: $privateKeyPhrase)
                     }
                 }
                 
@@ -476,7 +478,7 @@ struct AddVPSView: View {
                     }
                 }
             }
-            .navigationTitle("Add VPS")
+            .navigationTitle(LocalizationManager.shared.localizedString(.addVPS))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

@@ -12,7 +12,7 @@ struct VPSInstance: Identifiable, Codable {
     var username: String
     var password: String?
     var privateKey: String?
-    var keyPassphrase: String?
+    var privateKeyPhrase: String?
     var tags: [String]
     var group: String
     var isActive: Bool
@@ -34,7 +34,7 @@ struct VPSInstance: Identifiable, Codable {
         username: String,
         password: String? = nil,
         privateKey: String? = nil,
-        keyPassphrase: String? = nil,
+        privateKeyPhrase: String? = nil,
         tags: [String] = [],
         group: String = "默认分组",
         isActive: Bool = true
@@ -46,7 +46,7 @@ struct VPSInstance: Identifiable, Codable {
         self.username = username
         self.password = password
         self.privateKey = privateKey
-        self.keyPassphrase = keyPassphrase
+        self.privateKeyPhrase = privateKeyPhrase
         self.tags = tags
         self.group = group
         self.isActive = isActive
