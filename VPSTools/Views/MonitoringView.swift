@@ -88,7 +88,7 @@ struct MonitoringView: View {
                 Toggle("", isOn: $isAutoRefresh)
                     .labelsHidden()
                     .scaleEffect(0.8)
-                    .onChange(of: isAutoRefresh) { newValue in
+                    .onChange(of: isAutoRefresh) { oldValue, newValue in
                         if newValue {
                             startAutoRefresh()
                         } else {

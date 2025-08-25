@@ -15,6 +15,7 @@ class DeploymentService: ObservableObject {
     @Published var currentTask: DeploymentTask?
     @Published var isLoading: Bool = false
     @Published var lastError: String?
+    @Published var isTemplatesLoading: Bool = false
     
     // MARK: - Private Properties
     
@@ -47,12 +48,16 @@ class DeploymentService: ObservableObject {
     
     init(vpsManager: VPSManager) {
         self.vpsManager = vpsManager
-        loadTemplates()
-        loadDeploymentTasks()
-        setupBindings()
-        
-        // 定期清理过期缓存
-        setupCacheCleanup()
+        // 异步加载远程模板
+        Task {
+           await loadTemplatesFromRemote()
+           loadTemplates()
+           loadDeploymentTasks()
+           setupBindings()
+           
+           // 定期清理过期缓存
+           setupCacheCleanup()
+        }
     }
     
     // MARK: - Public Methods
@@ -1216,26 +1221,88 @@ class DeploymentService: ObservableObject {
     }
     
     private func loadTemplates() {
-        // 加载内置模板
-        loadBuiltinTemplates()
-        
         // 加载用户自定义模板
         loadCustomTemplates()
+        
+        // 远程模板将在初始化时异步加载
     }
     
     private func loadBuiltinTemplates() {
+        Task {
+            await loadTemplatesFromRemote()
+        }
+    }
+    
+    private func loadTemplatesFromRemote() async {
+        await MainActor.run {
+            self.isTemplatesLoading = true
+        }
+        
+        let remoteURL = "https://raw.githubusercontent.com/clap-top/VPSTools/refs/heads/template/VPSTools/Resources/builtin_templates.json"
+        
+        guard let url = URL(string: remoteURL) else {
+            print("Invalid remote URL")
+            await MainActor.run {
+                self.isTemplatesLoading = false
+            }
+            return
+        }
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                print("Failed to fetch templates from remote: HTTP \(response)")
+                await MainActor.run {
+                    self.isTemplatesLoading = false
+                }
+                return
+            }
+            
+            let templateResponse = try JSONDecoder().decode(TemplateResponse.self, from: data)
+            
+            await MainActor.run {
+                // 清除现有的远程模板（保留用户自定义模板）
+                self.templates.removeAll { $0.isOfficial }
+                self.templates.append(contentsOf: templateResponse.templates)
+                self.isTemplatesLoading = false
+                print("Successfully loaded \(templateResponse.templates.count) templates from remote")
+            }
+            
+        } catch {
+            print("Failed to load templates from remote: \(error)")
+            
+            // 如果远程加载失败，尝试加载本地备份
+            await loadLocalBackupTemplates()
+        }
+    }
+    
+    private func loadLocalBackupTemplates() async {
         guard let url = Bundle.main.url(forResource: "builtin_templates", withExtension: "json") else {
-            print("Failed to find builtin_templates.json")
+            print("Failed to find local backup templates")
+            await MainActor.run {
+                self.isTemplatesLoading = false
+            }
             return
         }
         
         do {
             let data = try Data(contentsOf: url)
             let templateResponse = try JSONDecoder().decode(TemplateResponse.self, from: data)
-            templates.append(contentsOf: templateResponse.templates)
-            print("Successfully loaded \(templateResponse.templates.count) builtin templates")
+            
+            await MainActor.run {
+                // 清除现有的远程模板（保留用户自定义模板）
+                self.templates.removeAll { $0.isOfficial }
+                self.templates.append(contentsOf: templateResponse.templates)
+                self.isTemplatesLoading = false
+                print("Successfully loaded \(templateResponse.templates.count) templates from local backup")
+            }
         } catch {
-            print("Failed to load builtin templates: \(error)")
+            print("Failed to load local backup templates: \(error)")
+            await MainActor.run {
+                self.isTemplatesLoading = false
+            }
         }
     }
     
@@ -1580,13 +1647,13 @@ class DeploymentService: ObservableObject {
         try await vpsManager.writeFile(content: processedScript, to: scriptPath, on: vps)
         
         // 设置执行权限
-        try await vpsManager.executeSSHCommandForService("chmod +x \(scriptPath)", on: vps)
+        let _ = try await vpsManager.executeSSHCommandForService("chmod +x \(scriptPath)", on: vps)
         
         // 执行脚本
         let output = try await vpsManager.executeSSHCommandForService(scriptPath, on: vps)
         
         // 清理临时文件
-        try? await vpsManager.executeSSHCommandForService("rm -f \(scriptPath)", on: vps)
+        let _ = try? await vpsManager.executeSSHCommandForService("rm -f \(scriptPath)", on: vps)
         
         // 解析输出中的变量定义
         parseEnvironmentVariablesFromOutput(output, environmentVariables: &environmentVariables)
@@ -2216,5 +2283,10 @@ extension DeploymentService {
         if !expiredKeys.isEmpty {
             print("Cleared \(expiredKeys.count) expired cache entries")
         }
+    }
+    
+    /// 手动刷新远程模板
+    func refreshTemplates() async {
+        await loadTemplatesFromRemote()
     }
 }

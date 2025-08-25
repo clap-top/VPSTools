@@ -371,7 +371,7 @@ class SingBoxInstallService: ObservableObject {
             updateProgress(within: .downloadingSingBox, progress: 0.4)
             addLog("正在下载文件...")
             
-            let output = try await sshClient.executeCommand(downloadCommand)
+            _ = try await sshClient.executeCommand(downloadCommand)
             updateProgress(within: .downloadingSingBox, progress: 0.8)
             addLog("下载完成")
             
@@ -386,7 +386,7 @@ class SingBoxInstallService: ObservableObject {
             
             // 备用方案：使用curl
             let curlCommand = "cd /tmp && curl -L -o sing-box.tar.gz '\(url)'"
-            let output = try await sshClient.executeCommand(curlCommand)
+            _ = try await sshClient.executeCommand(curlCommand)
             updateProgress(within: .downloadingSingBox, progress: 0.8)
             addLog("curl下载完成")
         }
@@ -453,7 +453,7 @@ class SingBoxInstallService: ObservableObject {
         for (index, command) in createDirCommands.enumerated() {
             let progress = Double(index + 1) / Double(createDirCommands.count)
             updateProgress(within: .configuringService, progress: 0.3 + (progress * 0.2))
-            try await sshClient.executeCommand(command)
+            let _ = try await sshClient.executeCommand(command)
         }
         
         // 创建systemd服务文件
@@ -493,7 +493,7 @@ class SingBoxInstallService: ObservableObject {
         for (index, command) in serviceCommands.enumerated() {
             let progress = Double(index + 1) / Double(serviceCommands.count)
             updateProgress(within: .configuringService, progress: 0.8 + (progress * 0.2))
-            try await sshClient.executeCommand(command)
+            let _ = try await sshClient.executeCommand(command)
         }
         
         addLog("服务配置完成")
@@ -504,7 +504,7 @@ class SingBoxInstallService: ObservableObject {
         addLog("正在启动SingBox服务...")
         
         let startCommand = "sudo systemctl start sing-box"
-        try await sshClient.executeCommand(startCommand)
+        let _ = try await sshClient.executeCommand(startCommand)
         
         // 等待服务启动
         try await Task.sleep(nanoseconds: 2_000_000_000) // 2秒

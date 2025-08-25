@@ -64,10 +64,6 @@ struct QuickDeployView: View {
                             showingRecentDeployments = true
                         }
                         
-                        Button("管理模板") {
-                            // TODO: 导航到模板管理
-                        }
-                        
                         Button("连接测试") {
                             Task {
                                 await testConnection()
@@ -343,17 +339,8 @@ struct QuickDeployView: View {
     // MARK: - Private Methods
     
     private func checkConnectionStatus() {
-        // 检查 VPS 连接状态
         Task {
-            do {
-                // 这里可以添加连接状态检查逻辑
-                // 暂时跳过，因为 VPSManager 已经有连接测试功能
-            } catch {
-                await MainActor.run {
-                    errorMessage = "连接检查失败: \(error.localizedDescription)"
-                    showingErrorAlert = true
-                }
-            }
+            await testConnection()
         }
     }
     
@@ -369,15 +356,13 @@ struct QuickDeployView: View {
     
     private func testConnection() async {
         do {
-            // 这里可以添加连接测试逻辑
-            // 暂时显示成功消息
-            await MainActor.run {
-                showSuccessMessage("连接测试完成")
+            let testResult = await vpsManager.testConnection(for: vps)
+            if !testResult.isConnected {
+                let errorMessage = testResult.sshError ?? "未知连接错误"
+                throw VPSManagerError.connectionFailed(errorMessage)
             }
         } catch {
-            await MainActor.run {
-                showErrorMessage("连接测试失败: \(error.localizedDescription)")
-            }
+            
         }
     }
     
