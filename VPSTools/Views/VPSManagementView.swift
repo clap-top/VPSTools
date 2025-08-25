@@ -431,7 +431,7 @@ struct AddVPSView: View {
     @State private var port = "22"
     @State private var username = ""
     @State private var password = ""
-    @State private var sshKeyPath = ""
+    @State private var privateKey = ""
     @State private var group = LocalizationManager.shared.localizedString(.defaultGroup)
     @State private var tags = ""
     @State private var authMethod: AuthMethod = .password
@@ -460,7 +460,7 @@ struct AddVPSView: View {
                     if authMethod == .password {
                         SecureField(LocalizationManager.shared.localizedString(.password), text: $password)
                     } else {
-                        TextField(LocalizationManager.shared.localizedString(.sshKeyPath), text: $sshKeyPath)
+                        TextField(LocalizationManager.shared.localizedString(.privateKey), text: $privateKey)
                     }
                 }
                 
@@ -539,7 +539,7 @@ struct AddVPSView: View {
     
     private var isValid: Bool {
         !name.isEmpty && !host.isEmpty && !username.isEmpty && !port.isEmpty &&
-        (authMethod == .password ? !password.isEmpty : !sshKeyPath.isEmpty)
+        (authMethod == .password ? !password.isEmpty : !privateKey.isEmpty)
     }
     
     private func saveVPS() async {
@@ -554,7 +554,7 @@ struct AddVPSView: View {
                 port: Int(port) ?? 22,
                 username: username,
                 password: authMethod == .password ? password : nil,
-                sshKeyPath: authMethod != .password ? sshKeyPath : nil,
+                privateKey: authMethod != .password ? privateKey : nil,
                 tags: tags.isEmpty ? [] : tags.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) },
                 group: group
             )

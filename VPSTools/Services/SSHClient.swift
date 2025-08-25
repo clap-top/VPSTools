@@ -550,7 +550,12 @@ class SSHClient {
       guard let self = self else { throw SSHError.authenticationFailed("Client released") }
       
       print("开始 SSH 认证...")
-      let authResult = await client.authenticate(password: vps.password ?? "")
+      var authResult = false
+      if(vps.password != nil) {
+        authResult = await client.authenticate(password: vps.password ?? "")
+      } else if(vps.privateKey != nil) {
+        authResult = await client.authenticate(privateKey: vps.privateKey ?? "", passphrase: vps.keyPassphrase ?? "")
+      }
       print("认证结果: \(authResult)")
       
       if !authResult {

@@ -12,7 +12,8 @@ struct EditVPSView: View {
     @State private var port: String
     @State private var username: String
     @State private var password: String
-    @State private var sshKeyPath: String
+    @State private var privateKey: String
+    @State private var keyPassphrase: String
     @State private var group: String
     @State private var tags: String
     @State private var authMethod: AuthMethod
@@ -28,10 +29,11 @@ struct EditVPSView: View {
         _port = State(initialValue: String(vps.port))
         _username = State(initialValue: vps.username)
         _password = State(initialValue: vps.password ?? "")
-        _sshKeyPath = State(initialValue: vps.sshKeyPath ?? "")
+        _privateKey = State(initialValue: vps.privateKey ?? "")
+        _keyPassphrase = State(initialValue: vps.keyPassphrase ?? "")
         _group = State(initialValue: vps.group)
         _tags = State(initialValue: vps.tags.joined(separator: ", "))
-        _authMethod = State(initialValue: vps.password != nil ? .password : .keyFile)
+        _authMethod = State(initialValue: vps.password != nil ? .password : .privateKey)
     }
     
     var body: some View {
@@ -56,7 +58,7 @@ struct EditVPSView: View {
                     if authMethod == .password {
                         SecureField("密码", text: $password)
                     } else {
-                        TextField("SSH 密钥路径", text: $sshKeyPath)
+                        TextField("SSH 密钥", text: $privateKey)
                     }
                 }
                 
@@ -135,7 +137,7 @@ struct EditVPSView: View {
     
     private var isValid: Bool {
         !name.isEmpty && !host.isEmpty && !username.isEmpty && !port.isEmpty &&
-        (authMethod == .password ? !password.isEmpty : !sshKeyPath.isEmpty)
+        (authMethod == .password ? !password.isEmpty : !privateKey.isEmpty)
     }
     
     private func updateVPS() async {
@@ -149,7 +151,7 @@ struct EditVPSView: View {
             updatedVPS.port = Int(port) ?? 22
             updatedVPS.username = username
             updatedVPS.password = authMethod == .password ? password : nil
-            updatedVPS.sshKeyPath = authMethod != .password ? sshKeyPath : nil
+            updatedVPS.privateKey = authMethod != .password ? privateKey : nil
             updatedVPS.group = group
             updatedVPS.tags = tags.isEmpty ? [] : tags.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
             
@@ -167,14 +169,14 @@ struct EditVPSView: View {
 
 enum AuthMethod: String, CaseIterable {
     case password = "password"
-    case keyFile = "keyFile"
+    case privateKey = "privateKey"
     
     var displayName: String {
         switch self {
         case .password:
             return "密码"
-        case .keyFile:
-            return "密钥文件"
+        case .privateKey:
+            return "密钥"
         }
     }
 }

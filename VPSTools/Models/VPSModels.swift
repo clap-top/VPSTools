@@ -11,7 +11,8 @@ struct VPSInstance: Identifiable, Codable {
     var port: Int
     var username: String
     var password: String?
-    var sshKeyPath: String?
+    var privateKey: String?
+    var keyPassphrase: String?
     var tags: [String]
     var group: String
     var isActive: Bool
@@ -32,7 +33,8 @@ struct VPSInstance: Identifiable, Codable {
         port: Int = 22,
         username: String,
         password: String? = nil,
-        sshKeyPath: String? = nil,
+        privateKey: String? = nil,
+        keyPassphrase: String? = nil,
         tags: [String] = [],
         group: String = "默认分组",
         isActive: Bool = true
@@ -43,7 +45,8 @@ struct VPSInstance: Identifiable, Codable {
         self.port = port
         self.username = username
         self.password = password
-        self.sshKeyPath = sshKeyPath
+        self.privateKey = privateKey
+        self.keyPassphrase = keyPassphrase
         self.tags = tags
         self.group = group
         self.isActive = isActive

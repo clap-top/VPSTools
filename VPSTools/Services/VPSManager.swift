@@ -367,7 +367,7 @@ class VPSManager: ObservableObject {
         }
         
         // 验证认证信息
-        if vps.password == nil && vps.sshKeyPath == nil {
+        if vps.password == nil && vps.privateKey == nil {
             throw VPSManagerError.invalidAuth("必须提供密码或 SSH 密钥")
         }
         
@@ -375,8 +375,8 @@ class VPSManager: ObservableObject {
             throw VPSManagerError.invalidAuth("密码不能为空")
         }
         
-        if let sshKeyPath = vps.sshKeyPath, sshKeyPath.isEmpty {
-            throw VPSManagerError.invalidAuth("SSH 密钥路径不能为空")
+        if let privateKey = vps.privateKey, privateKey.isEmpty {
+            throw VPSManagerError.invalidAuth("SSH 密钥不能为空")
         }
         
         // 验证分组

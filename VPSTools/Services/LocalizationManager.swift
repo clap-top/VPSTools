@@ -328,7 +328,7 @@ enum LocalizationKey: String, CaseIterable {
     case username = "username"
     case authMethod = "auth_method"
     case password = "password"
-    case sshKeyPath = "ssh_key_path"
+    case privateKey = "private_key"
     case groupAndTags = "group_and_tags"
     case group = "group"
     case tagsCommaSeparated = "tags_comma_separated"
@@ -620,7 +620,7 @@ enum LocalizationKey: String, CaseIterable {
             .username: "用户名",
             .authMethod: "认证方式",
             .password: "密码",
-            .sshKeyPath: "SSH 密钥路径",
+            .privateKey: "SSH 密钥",
             .groupAndTags: "分组和标签",
             .group: "分组",
             .tagsCommaSeparated: "标签（用逗号分隔）",
@@ -895,7 +895,7 @@ enum LocalizationKey: String, CaseIterable {
             .username: "Username",
             .authMethod: "Auth Method",
             .password: "Password",
-            .sshKeyPath: "SSH Key Path",
+            .privateKey: "SSH Key",
             .groupAndTags: "Group & Tags",
             .group: "Group",
             .tagsCommaSeparated: "Tags (comma separated)",
