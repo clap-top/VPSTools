@@ -421,6 +421,8 @@ class VPSManager: ObservableObject {
         
         // 解析负载平均值
         let loadParts = loadAvg.components(separatedBy: .whitespaces).compactMap { Double($0) }
+        // 确保至少有3个元素，如果不足则用0填充
+        let paddedLoadParts = Array(loadParts.prefix(3)) + Array(repeating: 0.0, count: max(0, 3 - loadParts.count))
         
         return SystemInfo(
             osName: osInfo.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -433,7 +435,7 @@ class VPSManager: ObservableObject {
             diskTotal: diskParts.count > 1 ? diskParts[0] : 0,
             diskAvailable: diskParts.count > 2 ? diskParts[2] : 0,
             uptime: Double(uptime.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0,
-            loadAverage: loadParts
+            loadAverage: paddedLoadParts
         )
     }
     
@@ -460,6 +462,8 @@ class VPSManager: ObservableObject {
         
         // 解析负载平均值
         let loadParts = loadAvg.components(separatedBy: .whitespaces).compactMap { Double($0) }
+        // 确保至少有3个元素，如果不足则用0填充
+        let paddedLoadParts = Array(loadParts.prefix(3)) + Array(repeating: 0.0, count: max(0, 3 - loadParts.count))
         
         return MonitoringData(
             timestamp: Date(),
@@ -468,7 +472,7 @@ class VPSManager: ObservableObject {
             diskUsage: Double(diskUsage.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0,
             networkIn: networkIn,
             networkOut: networkOut,
-            loadAverage: loadParts
+            loadAverage: paddedLoadParts
         )
     }
     

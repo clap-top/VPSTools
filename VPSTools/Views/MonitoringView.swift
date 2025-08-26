@@ -830,9 +830,10 @@ struct VPSMonitoringDetailView: View {
             return "暂无数据"
         }
         
-        let load1 = String(format: "%.2f", loadAverage[0])
-        let load5 = String(format: "%.2f", loadAverage[1])
-        let load15 = String(format: "%.2f", loadAverage[2])
+        // 额外的安全检查
+        let load1 = loadAverage.count > 0 ? String(format: "%.2f", loadAverage[0]) : "0.00"
+        let load5 = loadAverage.count > 1 ? String(format: "%.2f", loadAverage[1]) : "0.00"
+        let load15 = loadAverage.count > 2 ? String(format: "%.2f", loadAverage[2]) : "0.00"
         
         return "\(load1) \(load5) \(load15)"
     }
