@@ -41,47 +41,12 @@ class SSHClient {
   }
 
   // MARK: - Connection Testing
-
-  /// Tests SSH connection to VPS
-  func testConnection(host: String, port: UInt16, username: String, authMethod: AuthMethod)
-    async throws -> Bool
-  {
-    print("Testing connection to \(host):\(port)")
-
-    // First test basic network connectivity
-    let isReachable = await testNetworkReachability(host: host, port: port)
-    guard isReachable else {
-      print("Network unreachable for \(host):\(port)")
-      return false
-    }
-
-    // Test SSH protocol handshake
-    do {
-      let sshReachable = try await testSSHHandshake(host: host, port: port)
-      if sshReachable {
-        print("SSH handshake successful for \(host):\(port)")
-        return true
-      } else {
-        print("SSH handshake failed for \(host):\(port)")
-        return false
-      }
-    } catch {
-      print("SSH connection test failed: \(error)")
-      return false
-    }
-  }
-
-  /// Test SSH protocol handshake
+  /// Test SSH protocol handshake using SwiftLibSSH
   private func testSSHHandshake(host: String, port: UInt16) async throws -> Bool {
     return await withCheckedContinuation { continuation in
-      let endpoint = NWEndpoint.hostPort(
-        host: NWEndpoint.Host(host),
-        port: NWEndpoint.Port(rawValue: port)!)
-      let connection = NWConnection(to: endpoint, using: .tcp)
-
       var hasResumed = false
       let resumeQueue = DispatchQueue(label: "ssh-test-resume")
-
+      
       func safeResume(_ value: Bool) {
         resumeQueue.sync {
           guard !hasResumed else { return }
@@ -89,55 +54,46 @@ class SSHClient {
           continuation.resume(returning: value)
         }
       }
-
-      connection.stateUpdateHandler = { state in
-        switch state {
-        case .ready:
-          // Send SSH version string to test SSH protocol
-          let sshVersionCheck = "SSH-2.0-TestClient\r\n".data(using: .utf8)!
-          connection.send(
-            content: sshVersionCheck,
-            completion: .contentProcessed { error in
-              if error != nil {
-                connection.cancel()
-                safeResume(false)
-                return
-              }
-
-              // Try to receive SSH server version
-              connection.receive(minimumIncompleteLength: 1, maximumLength: 256) {
-                data, _, isComplete, error in
-                connection.cancel()
-
-                if let data = data, let response = String(data: data, encoding: .utf8) {
-                  // Check if response looks like SSH protocol
-                  let isSSH = response.hasPrefix("SSH-") || response.contains("SSH")
-                  safeResume(isSSH)
-                } else {
-                  safeResume(false)
-                }
-              }
-            })
-
-        case .failed(let error):
-          print("SSH test connection failed: \(error)")
-          connection.cancel()
-          safeResume(false)
-
-        default:
-          break
-        }
+      
+      // Create a temporary SwiftLibSSH client for handshake testing
+      let testClient = SwiftLibSSH(
+        host: host,
+        port: Int32(port),
+        user: "test", // Use a dummy user for handshake test
+        methods: [SSHMethod.comp_cs : "aes128-ctr"],
+        keepalive: false
+      )
+      
+      // Set up a temporary delegate for handshake testing
+      let testDelegate = TestHandshakeDelegate { success in
+        safeResume(success)
       }
-
-      connection.start(queue: DispatchQueue.global())
-
+      testClient.sessionDelegate = testDelegate
+      
+      // Start connection test
+      Task {
+        do {
+          // Try to connect and perform handshake
+          let connectResult = await testClient.connect()
+          if !connectResult {
+            safeResume(false)
+            return
+          }
+          
+          let handshakeResult = await testClient.handshake()
+          safeResume(handshakeResult)
+          
+        // Note: SwiftLibSSH methods don't throw, so this catch block is unreachable
+        // but kept for potential future error handling
+      }
+      
       // Timeout after 10 seconds
       DispatchQueue.global().asyncAfter(deadline: .now() + 10) {
-        connection.cancel()
         safeResume(false)
       }
     }
   }
+}
 
   /// Tests SSH connection to VPS instance
   func testConnection(_ vps: VPSInstance) async throws -> Bool {
@@ -166,37 +122,6 @@ class SSHClient {
       print("SSH connection test failed for \(vps.name): \(error)")
       return false
     }
-  }
-
-  /// Connect to VPS with individual parameters
-  func connect(to host: String, port: UInt16, username: String, password: String) async throws {
-    print("Connecting to \(host):\(port) as \(username)")
-
-    // Validate parameters
-    guard !host.isEmpty else {
-      throw SSHError.connectionFailed
-    }
-
-    guard port > 0 && port <= 65535 else {
-      throw SSHError.connectionFailed
-    }
-
-    guard !username.isEmpty else {
-      throw SSHError.authenticationFailed("Username cannot be empty")
-    }
-
-    // Test network connectivity first
-    let isReachable = await testNetworkReachability(host: host, port: port)
-    guard isReachable else {
-      throw SSHError.networkUnreachable
-    }
-
-    // Establish connection
-    try await establishDirectConnection(host: host, port: port)
-
-    isConnected = true
-    currentHost = host
-    print("Successfully connected to \(host):\(port)")
   }
 
   /// Connect to VPS instance
@@ -406,53 +331,6 @@ class SSHClient {
   }
 
   // MARK: - Private Connection Methods
-
-  /// Establish direct connection for simple cases
-  private func establishDirectConnection(host: String, port: UInt16) async throws {
-    let endpoint = NWEndpoint.hostPort(
-      host: NWEndpoint.Host(host),
-      port: NWEndpoint.Port(rawValue: port)!
-    )
-
-    let connection = NWConnection(to: endpoint, using: .tcp)
-
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-      var hasResumed = false
-      let resumeQueue = DispatchQueue(label: "direct-connection-resume")
-
-      @Sendable func safeResume(with result: Result<Void, Error>) {
-        resumeQueue.sync {
-          guard !hasResumed else { return }
-          hasResumed = true
-          continuation.resume(with: result)
-        }
-      }
-
-      connection.stateUpdateHandler = { state in
-        switch state {
-        case .ready:
-          self.activeConnection = connection
-          safeResume(with: .success(()))
-
-        case .failed(_):
-          connection.cancel()
-          safeResume(with: .failure(SSHError.connectionFailed))
-
-        default:
-          break
-        }
-      }
-
-      connection.start(queue: connectionQueue)
-
-      // Connection timeout
-      DispatchQueue.global().asyncAfter(deadline: .now() + connectionTimeout) {
-        connection.cancel()
-        safeResume(with: .failure(SSHError.timeout))
-      }
-    }
-  }
-
   /// Establish SSH connection to VPS (prefer SwiftLibSSH, otherwise Citadel)
   private func establishSSHConnection(to vps: VPSInstance) async throws {
     print("Establishing SSH (SwiftLibSSH) connection to \(vps.host):\(vps.port)")
@@ -465,6 +343,7 @@ class SSHClient {
           host: vps.host,
           port: Int32(Int(vps.port)),
           user: vps.username,
+          methods: [SSHMethod.comp_cs : "aes128-ctr"],
           keepalive: true,
           )
       client.sessionDelegate = self
@@ -765,6 +644,45 @@ extension SSHClient: SessionDelegate {
     func trace(ssh: SwiftLibSSH, message: String) async {
         print("trace: \(message)")
     }
+}
+
+// MARK: - Test Handshake Delegate
+
+/// Temporary delegate for SSH handshake testing
+private class TestHandshakeDelegate: SessionDelegate {
+    private let completion: (Bool) -> Void
     
+    init(completion: @escaping (Bool) -> Void) {
+        self.completion = completion
+    }
     
+    func disconnect(ssh: SwiftLibSSH) {
+        print("Test handshake: disconnect")
+    }
+    
+    func connect(ssh: SwiftLibSSH, fingerprint: String) -> Bool {
+        print("Test handshake: connect with fingerprint: \(fingerprint)")
+        return true
+    }
+    
+    func keyboardInteractive(ssh: SwiftLibSSH, prompt: String) -> String {
+        print("Test handshake: keyboard interactive prompt: \(prompt)")
+        return ""
+    }
+    
+    func send(ssh: SwiftLibSSH, size: Int) async {
+        print("Test handshake: send size: \(size)")
+    }
+    
+    func recv(ssh: SwiftLibSSH, size: Int) async {
+        print("Test handshake: recv size: \(size)")
+    }
+    
+    func debug(ssh: SwiftLibSSH, message: String) async {
+        print("Test handshake: debug: \(message)")
+    }
+    
+    func trace(ssh: SwiftLibSSH, message: String) async {
+        print("Test handshake: trace: \(message)")
+    }
 }

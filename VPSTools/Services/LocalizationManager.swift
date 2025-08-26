@@ -540,7 +540,7 @@ enum LocalizationKey: String, CaseIterable {
             .aiWillAnalyze: "AI 将分析您的需求并生成部署命令",
             
             // System Info
-            .cpu: "CPU: %@核",
+            .cpu: "CPU",
             .targetVPS: "目标 VPS",
             .vpsNotExists: "VPS 不存在或已被删除",
             .logs: "条",
@@ -831,7 +831,7 @@ enum LocalizationKey: String, CaseIterable {
             .aiWillAnalyze: "AI will analyze your needs and generate deployment commands",
             
             // System Info
-            .cpu: "CPU: %@ cores",
+            .cpu: "CPU",
             .targetVPS: "Target VPS",
             .vpsNotExists: "VPS does not exist or has been deleted",
             .logs: "logs",
