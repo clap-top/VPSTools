@@ -152,7 +152,7 @@ struct VPSManagementView: View {
         var filtered = vpsManager.vpsInstances
         
         // 按分组筛选
-        if selectedGroup != LocalizationManager.shared.localizedString(.all) {
+        if selectedGroup != "全部" && selectedGroup != "All" {
             filtered = filtered.filter { $0.group == selectedGroup }
         }
         

@@ -38,7 +38,7 @@ struct SettingsView: View {
 //                monitoringSection
                 
                 // 语言设置
-//                languageSection
+                languageSection
                 
                 // SSH 连接管理
                 sshConnectionSection
