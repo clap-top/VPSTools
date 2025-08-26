@@ -273,6 +273,99 @@ enum LocalizationKey: String, CaseIterable {
     case settingViewTitle = "setting_view_title"
     case userPolicy = "user_policy"
     case privacyPolicy = "privacy_policy"
+    case systemInfoSection = "system_info_section"
+    case supportAndFeedback = "support_and_feedback"
+    case aboutSection = "about_section"
+    case dataStatistics = "data_statistics"
+    case dataOperations = "data_operations"
+    case clearAllVPSData = "clear_all_vps_data"
+    case clearDeploymentHistory = "clear_deployment_history"
+    case instructions = "instructions"
+    case securityInstructions = "security_instructions"
+    case securityInstructionsText = "security_instructions_text"
+    case confirmClear = "confirm_clear"
+    case clear = "clear"
+    case biometricAuthentication = "biometric_authentication"
+    case useBiometricToUnlock = "use_biometric_to_unlock"
+    case passwordProtection = "password_protection"
+    case appPassword = "app_password"
+    case setAppAccessPassword = "set_app_access_password"
+    case setPassword = "set_password"
+    case themeMode = "theme_mode"
+    case accentColor = "accent_color"
+    case version = "version"
+    case developmentInfo = "development_info"
+    case developmentTeam = "development_team"
+    case buildVersion = "build_version"
+    case releaseDate = "release_date"
+    case technicalSupport = "technical_support"
+    case officialWebsite = "official_website"
+    case contactEmail = "contact_email"
+    case exportingData = "exporting_data"
+    case exportDataTitle = "export_data_title"
+    case exportDataDescription = "export_data_description"
+    case exportContent = "export_content"
+    case deploymentTaskHistory = "deployment_task_history"
+    case customDeploymentTemplates = "custom_deployment_templates"
+    case appSettings = "app_settings"
+    case startExport = "start_export"
+    case importingData = "importing_data"
+    case importDataTitle = "import_data_title"
+    case importDataDescription = "import_data_description"
+    case importInstructions = "import_instructions"
+    case importWillOverwrite = "import_will_overwrite"
+    case ensureBackupComplete = "ensure_backup_complete"
+    case importProcessUninterruptible = "import_process_uninterruptible"
+    case selectBackupFile = "select_backup_file"
+    case termsOfServiceTitle = "terms_of_service_title"
+    case termsOfServiceDescription = "terms_of_service_description"
+    case serviceDescription = "service_description"
+    case userResponsibility = "user_responsibility"
+    case userResponsibilityText = "user_responsibility_text"
+    case serviceLimitations = "service_limitations"
+    case serviceLimitationsText = "service_limitations_text"
+    case privacyProtection = "privacy_protection"
+    case privacyProtectionText = "privacy_protection_text"
+    case privacyPolicyTitle = "privacy_policy_title"
+    case privacyPolicyDescription = "privacy_policy_description"
+    case informationCollection = "information_collection"
+    case informationCollectionDescription = "information_collection_description"
+    case appUsageStatistics = "app_usage_statistics"
+    case errorReportInformation = "error_report_information"
+    case performanceData = "performance_data"
+    case informationUsage = "information_usage"
+    case informationUsageDescription = "information_usage_description"
+    case improveAppFunctionality = "improve_app_functionality"
+    case resolveTechnicalIssues = "resolve_technical_issues"
+    case provideUserSupport = "provide_user_support"
+    case informationProtection = "information_protection"
+    case informationProtectionText = "information_protection_text"
+    case informationSharing = "information_sharing"
+    case informationSharingText = "information_sharing_text"
+    case feedbackType = "feedback_type"
+    case feedbackTypePicker = "feedback_type_picker"
+    case feedbackContent = "feedback_content"
+    case contactInfoOptional = "contact_info_optional"
+    case emailAddress = "email_address"
+    case submitFeedback = "submit_feedback"
+    case feedbackTitle = "feedback_title"
+    case submitSuccess = "submit_success"
+    case submitSuccessMessage = "submit_success_message"
+    case feedbackSuggestion = "feedback_suggestion"
+    case feedbackBug = "feedback_bug"
+    case feedbackFeature = "feedback_feature"
+    case feedbackOther = "feedback_other"
+    case themeLight = "theme_light"
+    case themeDark = "theme_dark"
+    case themeSystem = "theme_system"
+    case colorBlue = "color_blue"
+    case colorGreen = "color_green"
+    case colorPurple = "color_purple"
+    case colorOrange = "color_orange"
+    case colorRed = "color_red"
+    case releaseDateValue = "release_date_value"
+    case connectionTimeoutValue = "connection_timeout_value"
+    case appStatusSection = "app_status_section"
     
     // Additional Settings
     case appStatus = "app_status"
@@ -366,14 +459,18 @@ enum LocalizationKey: String, CaseIterable {
             // 使用系统语言
             return NSLocalizedString(self.rawValue, tableName: tableName, bundle: bundle, comment: "")
         case .chinese:
-            return chineseStrings[self] ?? self.rawValue
+            return LocalizationKey.chineseStrings[self] ?? self.rawValue
         case .english:
-            return englishStrings[self] ?? self.rawValue
+            return LocalizationKey.englishStrings[self] ?? self.rawValue
         }
     }
-    
+}
+
+// MARK: - Localization Strings
+
+extension LocalizationKey {
     // 中文字符串
-    private var chineseStrings: [LocalizationKey: String] {
+    static var chineseStrings: [LocalizationKey: String] {
         return [
             // Tab Bar
             .home: "首页",
@@ -577,6 +674,99 @@ enum LocalizationKey: String, CaseIterable {
             .settingViewTitle: "设置",
             .userPolicy: "使用条款",
             .privacyPolicy: "隐私政策",
+            .systemInfoSection: "系统信息",
+            .supportAndFeedback: "支持与反馈",
+            .aboutSection: "关于",
+            .dataStatistics: "数据统计",
+            .dataOperations: "数据操作",
+            .clearAllVPSData: "清除所有 VPS 数据",
+            .clearDeploymentHistory: "清除部署历史",
+            .instructions: "说明",
+            .securityInstructions: "说明",
+            .securityInstructionsText: "启用安全功能后，每次打开应用都需要验证身份。",
+            .confirmClear: "确认清除",
+            .clear: "清除",
+            .biometricAuthentication: "生物识别",
+            .useBiometricToUnlock: "使用生物识别解锁应用",
+            .passwordProtection: "密码保护",
+            .appPassword: "应用密码",
+            .setAppAccessPassword: "设置应用访问密码",
+            .setPassword: "设置密码",
+            .themeMode: "主题模式",
+            .accentColor: "强调色",
+            .version: "版本 1.0.0",
+            .developmentInfo: "开发信息",
+            .developmentTeam: "开发团队",
+            .buildVersion: "构建版本",
+            .releaseDate: "发布日期",
+            .technicalSupport: "技术支持",
+            .officialWebsite: "官方网站",
+            .contactEmail: "联系邮箱",
+            .exportingData: "正在导出数据...",
+            .exportDataTitle: "导出数据",
+            .exportDataDescription: "将 VPS 配置和部署历史导出为备份文件",
+            .exportContent: "导出内容包括：",
+            .deploymentTaskHistory: "• 部署任务历史",
+            .customDeploymentTemplates: "• 自定义部署模板",
+            .appSettings: "• 应用设置",
+            .startExport: "开始导出",
+            .importingData: "正在导入数据...",
+            .importDataTitle: "导入数据",
+            .importDataDescription: "从备份文件恢复 VPS 配置和部署历史",
+            .importInstructions: "导入说明：",
+            .importWillOverwrite: "• 导入将覆盖现有数据",
+            .ensureBackupComplete: "• 请确保备份文件完整",
+            .importProcessUninterruptible: "• 导入过程不可中断",
+            .selectBackupFile: "选择备份文件",
+            .termsOfServiceTitle: "使用条款",
+            .termsOfServiceDescription: "欢迎使用 VPS 管理工具。请仔细阅读以下使用条款。",
+            .serviceDescription: "1. 服务说明",
+            .userResponsibility: "2. 用户责任",
+            .userResponsibilityText: "用户应妥善保管 VPS 登录凭据，不得将敏感信息泄露给第三方。",
+            .serviceLimitations: "3. 服务限制",
+            .serviceLimitationsText: "本应用仅提供管理工具，不承担因 VPS 操作造成的任何损失。",
+            .privacyProtection: "4. 隐私保护",
+            .privacyProtectionText: "我们承诺保护用户隐私，不会收集或泄露用户的敏感信息。",
+            .privacyPolicyTitle: "隐私政策",
+            .privacyPolicyDescription: "我们重视您的隐私，本政策说明了我们如何收集、使用和保护您的信息。",
+            .informationCollection: "信息收集",
+            .informationCollectionDescription: "我们仅收集必要的应用使用数据，包括：",
+            .appUsageStatistics: "• 应用使用统计",
+            .errorReportInformation: "• 错误报告信息",
+            .performanceData: "• 性能数据",
+            .informationUsage: "信息使用",
+            .informationUsageDescription: "收集的信息仅用于：",
+            .improveAppFunctionality: "• 改进应用功能",
+            .resolveTechnicalIssues: "• 解决技术问题",
+            .provideUserSupport: "• 提供用户支持",
+            .informationProtection: "信息保护",
+            .informationProtectionText: "我们采用行业标准的安全措施保护您的信息，包括加密存储和传输。",
+            .informationSharing: "信息共享",
+            .informationSharingText: "我们不会向第三方出售、交易或转让您的个人信息。",
+            .feedbackType: "反馈类型",
+            .feedbackTypePicker: "类型",
+            .feedbackContent: "反馈内容",
+            .contactInfoOptional: "联系方式（可选）",
+            .emailAddress: "邮箱地址",
+            .submitFeedback: "提交反馈",
+            .feedbackTitle: "意见反馈",
+            .submitSuccess: "提交成功",
+            .submitSuccessMessage: "感谢您的反馈，我们会认真考虑您的建议。",
+            .feedbackSuggestion: "建议",
+            .feedbackBug: "问题反馈",
+            .feedbackFeature: "功能请求",
+            .feedbackOther: "其他",
+            .themeLight: "浅色",
+            .themeDark: "深色",
+            .themeSystem: "跟随系统",
+            .colorBlue: "蓝色",
+            .colorGreen: "绿色",
+            .colorPurple: "紫色",
+            .colorOrange: "橙色",
+            .colorRed: "红色",
+            .releaseDateValue: "2025年8月",
+            .connectionTimeoutValue: "30秒",
+            .appStatusSection: "应用状态",
             
             // Additional Settings
             .appStatus: "应用状态",
@@ -663,7 +853,7 @@ enum LocalizationKey: String, CaseIterable {
     }
     
     // 英文字符串
-    private var englishStrings: [LocalizationKey: String] {
+    static var englishStrings: [LocalizationKey: String] {
         return [
             // Tab Bar
             .home: "Home",
@@ -759,6 +949,21 @@ enum LocalizationKey: String, CaseIterable {
             // Common
             .cancel: "Cancel",
             .confirm: "Confirm",
+            .feedbackSuggestion: "Suggestion",
+            .feedbackBug: "Bug Report",
+            .feedbackFeature: "Feature Request",
+            .feedbackOther: "Other",
+            .themeLight: "Light",
+            .themeDark: "Dark",
+            .themeSystem: "System",
+            .colorBlue: "Blue",
+            .colorGreen: "Green",
+            .colorPurple: "Purple",
+            .colorOrange: "Orange",
+            .colorRed: "Red",
+            .releaseDateValue: "August 2025",
+            .connectionTimeoutValue: "30s",
+            .appStatusSection: "App Status",
             .ok: "OK",
             .yes: "Yes",
             .no: "No",
@@ -868,6 +1073,84 @@ enum LocalizationKey: String, CaseIterable {
             .settingViewTitle: "Settings",
             .userPolicy: "User Policy",
             .privacyPolicy: "Privacy Policy",
+            .systemInfoSection: "System Information",
+            .supportAndFeedback: "Support & Feedback",
+            .aboutSection: "About",
+            .dataStatistics: "Data Statistics",
+            .dataOperations: "Data Operations",
+            .clearAllVPSData: "Clear All VPS Data",
+            .clearDeploymentHistory: "Clear Deployment History",
+            .instructions: "Instructions",
+            .securityInstructions: "Instructions",
+            .securityInstructionsText: "After enabling security features, identity verification will be required each time the app is opened.",
+            .confirmClear: "Confirm Clear",
+            .clear: "Clear",
+            .biometricAuthentication: "Biometric Authentication",
+            .useBiometricToUnlock: "Use biometric authentication to unlock the app",
+            .passwordProtection: "Password Protection",
+            .appPassword: "App Password",
+            .setAppAccessPassword: "Set app access password",
+            .setPassword: "Set Password",
+            .themeMode: "Theme Mode",
+            .accentColor: "Accent Color",
+            .version: "Version 1.0.0",
+            .developmentInfo: "Development Info",
+            .developmentTeam: "Development Team",
+            .buildVersion: "Build Version",
+            .releaseDate: "Release Date",
+            .technicalSupport: "Technical Support",
+            .officialWebsite: "Official Website",
+            .contactEmail: "Contact Email",
+            .exportingData: "Exporting data...",
+            .exportDataTitle: "Export Data",
+            .exportDataDescription: "Export VPS configuration and deployment history as backup file",
+            .exportContent: "Export content includes:",
+            .deploymentTaskHistory: "• Deployment task history",
+            .customDeploymentTemplates: "• Custom deployment templates",
+            .appSettings: "• App settings",
+            .startExport: "Start Export",
+            .importingData: "Importing data...",
+            .importDataTitle: "Import Data",
+            .importDataDescription: "Restore VPS configuration and deployment history from backup file",
+            .importInstructions: "Import instructions:",
+            .importWillOverwrite: "• Import will overwrite existing data",
+            .ensureBackupComplete: "• Please ensure backup file is complete",
+            .importProcessUninterruptible: "• Import process cannot be interrupted",
+            .selectBackupFile: "Select Backup File",
+            .termsOfServiceTitle: "Terms of Service",
+            .termsOfServiceDescription: "Welcome to VPS Management Tool. Please read the following terms of service carefully.",
+            .serviceDescription: "1. Service Description",
+            .userResponsibility: "2. User Responsibility",
+            .userResponsibilityText: "Users should properly keep VPS login credentials and not disclose sensitive information to third parties.",
+            .serviceLimitations: "3. Service Limitations",
+            .serviceLimitationsText: "This app only provides management tools and does not bear any losses caused by VPS operations.",
+            .privacyProtection: "4. Privacy Protection",
+            .privacyProtectionText: "We commit to protecting user privacy and will not collect or disclose users' sensitive information.",
+            .privacyPolicyTitle: "Privacy Policy",
+            .privacyPolicyDescription: "We value your privacy. This policy explains how we collect, use, and protect your information.",
+            .informationCollection: "Information Collection",
+            .informationCollectionDescription: "We only collect necessary app usage data, including:",
+            .appUsageStatistics: "• App usage statistics",
+            .errorReportInformation: "• Error report information",
+            .performanceData: "• Performance data",
+            .informationUsage: "Information Usage",
+            .informationUsageDescription: "Collected information is only used for:",
+            .improveAppFunctionality: "• Improving app functionality",
+            .resolveTechnicalIssues: "• Resolving technical issues",
+            .provideUserSupport: "• Providing user support",
+            .informationProtection: "Information Protection",
+            .informationProtectionText: "We use industry-standard security measures to protect your information, including encrypted storage and transmission.",
+            .informationSharing: "Information Sharing",
+            .informationSharingText: "We will not sell, trade, or transfer your personal information to third parties.",
+            .feedbackType: "Feedback Type",
+            .feedbackTypePicker: "Type",
+            .feedbackContent: "Feedback Content",
+            .contactInfoOptional: "Contact Info (Optional)",
+            .emailAddress: "Email Address",
+            .submitFeedback: "Submit Feedback",
+            .feedbackTitle: "Feedback",
+            .submitSuccess: "Submit Success",
+            .submitSuccessMessage: "Thank you for your feedback. We will carefully consider your suggestions.",
             
             // Additional Settings
             .appStatus: "App Status",

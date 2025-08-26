@@ -96,7 +96,7 @@ struct SettingsView: View {
     // MARK: - App Status Section
     
     private var appStatusSection: some View {
-        Section("应用状态") {
+        Section(String(.appStatusSection)) {
             HStack {
                 Image(systemName: appLifecycleManager.isAppActive ? "checkmark.circle.fill" : "pause.circle.fill")
                     .foregroundColor(appLifecycleManager.isAppActive ? .green : .orange)
@@ -368,7 +368,7 @@ struct SettingsView: View {
                     
                     Spacer()
                     
-                    Text("30\(String(.secondsShort))")
+                    Text(String(.connectionTimeoutValue))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -508,7 +508,7 @@ struct SettingsView: View {
     // MARK: - System Info Section
     
     private var systemInfoSection: some View {
-        Section("系统信息") {
+        Section(String(.systemInfoSection)) {
             HStack {
                 Image(systemName: "info.circle")
                     .foregroundColor(.blue)
@@ -565,7 +565,7 @@ struct SettingsView: View {
     // MARK: - Support Section
     
     private var supportSection: some View {
-        Section("支持与反馈") {
+        Section(String(.supportAndFeedback)) {
 //            Button(action: { showingFeedback = true }) {
 //                HStack {
 //                    Image(systemName: "envelope")
@@ -627,7 +627,7 @@ struct SettingsView: View {
     // MARK: - About Section
     
     private var aboutSection: some View {
-        Section("关于") {
+        Section(String(.aboutSection)) {
             Button(action: { showingAbout = true }) {
                 HStack {
                     Image(systemName: "app.badge")
@@ -667,7 +667,7 @@ struct DataManagementView: View {
     var body: some View {
         NavigationView {
             List {
-                Section("数据统计") {
+                Section(String(.dataStatistics)) {
                     HStack {
                         Text(.vpsInstances)
                         Spacer()
@@ -690,44 +690,44 @@ struct DataManagementView: View {
                     }
                 }
                 
-                Section("数据操作") {
-                    Button("清除所有 VPS 数据") {
+                Section(String(.dataOperations)) {
+                    Button(String(.clearAllVPSData)) {
                         showingClearConfirmation = true
                     }
                     .foregroundColor(.red)
                     
-                    Button("清除部署历史") {
+                    Button(String(.clearDeploymentHistory)) {
                         showingDeleteConfirmation = true
                     }
                     .foregroundColor(.orange)
                 }
                 
-                Section("说明") {
+                Section(String(.instructions)) {
                     Text(.clearDataWarningIrreversible)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
-            .navigationTitle("数据管理")
+            .navigationTitle(String(.dataManagement))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(String(.done)) {
                         dismiss()
                     }
                 }
             }
-            .alert("确认清除", isPresented: $showingClearConfirmation) {
-                Button("取消", role: .cancel) { }
-                Button("清除", role: .destructive) {
+            .alert(String(.confirmClear), isPresented: $showingClearConfirmation) {
+                Button(String(.cancel), role: .cancel) { }
+                Button(String(.clear), role: .destructive) {
                     vpsManager.clearAllData()
                 }
             } message: {
                 Text(.clearDataWarning)
             }
-            .alert("确认清除", isPresented: $showingDeleteConfirmation) {
-                Button("取消", role: .cancel) { }
-                Button("清除", role: .destructive) {
+            .alert(String(.confirmClear), isPresented: $showingDeleteConfirmation) {
+                Button(String(.cancel), role: .cancel) { }
+                Button(String(.clear), role: .destructive) {
                     deploymentService.clearAllTasks()
                 }
             } message: {
@@ -748,7 +748,7 @@ struct SecuritySettingsView: View {
     var body: some View {
         NavigationView {
             List {
-                Section("生物识别") {
+                Section(String(.biometricAuthentication)) {
                     HStack {
                         Image(systemName: "faceid")
                             .foregroundColor(.blue)
@@ -758,7 +758,7 @@ struct SecuritySettingsView: View {
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            Text("使用生物识别解锁应用")
+                            Text(String(.useBiometricToUnlock))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -770,17 +770,17 @@ struct SecuritySettingsView: View {
                     }
                 }
                 
-                Section("密码保护") {
+                Section(String(.passwordProtection)) {
                     HStack {
                         Image(systemName: "lock")
                             .foregroundColor(.red)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("应用密码")
+                            Text(String(.appPassword))
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                             
-                            Text("设置应用访问密码")
+                            Text(String(.setAppAccessPassword))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -792,24 +792,24 @@ struct SecuritySettingsView: View {
                     }
                     
                     if isPasswordEnabled {
-                        Button("设置密码") {
+                        Button(String(.setPassword)) {
                             showingPasswordSetup = true
                         }
                         .foregroundColor(.blue)
                     }
                 }
                 
-                Section("说明") {
-                    Text("启用安全功能后，每次打开应用都需要验证身份。")
+                Section(String(.securityInstructions)) {
+                    Text(String(.securityInstructionsText))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
-            .navigationTitle("安全设置")
+            .navigationTitle(String(.securitySettings))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(String(.done)) {
                         dismiss()
                     }
                 }
@@ -826,26 +826,26 @@ struct ThemeSettingsView: View {
     @State private var selectedAccentColor: AccentColor = .blue
     
     enum AppTheme: String, CaseIterable {
-        case light = "浅色"
-        case dark = "深色"
-        case system = "跟随系统"
+        case light = "light"
+        case dark = "dark"
+        case system = "system"
     }
     
     enum AccentColor: String, CaseIterable {
-        case blue = "蓝色"
-        case green = "绿色"
-        case purple = "紫色"
-        case orange = "橙色"
-        case red = "红色"
+        case blue = "blue"
+        case green = "green"
+        case purple = "purple"
+        case orange = "orange"
+        case red = "red"
     }
     
     var body: some View {
         NavigationView {
             List {
-                Section("主题模式") {
+                Section(String(.themeMode)) {
                     ForEach(AppTheme.allCases, id: \.self) { theme in
                         HStack {
-                            Text(theme.rawValue)
+                            Text(themeDisplayName(theme))
                             Spacer()
                             if selectedTheme == theme {
                                 Image(systemName: "checkmark")
@@ -859,14 +859,14 @@ struct ThemeSettingsView: View {
                     }
                 }
                 
-                Section("强调色") {
+                Section(String(.accentColor)) {
                     ForEach(AccentColor.allCases, id: \.self) { color in
                         HStack {
                             Circle()
                                 .fill(accentColorFor(color))
                                 .frame(width: 20, height: 20)
                             
-                            Text(color.rawValue)
+                            Text(colorDisplayName(color))
                             
                             Spacer()
                             
@@ -882,11 +882,11 @@ struct ThemeSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("主题设置")
+            .navigationTitle(String(.themeSettings))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(String(.done)) {
                         dismiss()
                     }
                 }
@@ -901,6 +901,32 @@ struct ThemeSettingsView: View {
         case .purple: return .purple
         case .orange: return .orange
         case .red: return .red
+        }
+    }
+    
+    private func themeDisplayName(_ theme: AppTheme) -> String {
+        switch theme {
+        case .light:
+            return String(.themeLight)
+        case .dark:
+            return String(.themeDark)
+        case .system:
+            return String(.themeSystem)
+        }
+    }
+    
+    private func colorDisplayName(_ color: AccentColor) -> String {
+        switch color {
+        case .blue:
+            return String(.colorBlue)
+        case .green:
+            return String(.colorGreen)
+        case .purple:
+            return String(.colorPurple)
+        case .orange:
+            return String(.colorOrange)
+        case .red:
+            return String(.colorRed)
         }
     }
 }
@@ -919,15 +945,15 @@ struct AboutView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.blue)
                         
-                        Text("VPS 管理工具")
+                        Text(String(.vpsManagementTool))
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text("版本 1.0.0")
+                        Text(String(.version))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
-                        Text("专业的 VPS 服务器管理工具，提供便捷的部署、监控和管理功能。")
+                        Text(String(.appDescription))
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -937,50 +963,50 @@ struct AboutView: View {
                     .padding(.vertical)
                 }
                 
-                Section("开发信息") {
+                Section(String(.developmentInfo)) {
                     HStack {
-                        Text("开发团队")
+                        Text(String(.developmentTeam))
                         Spacer()
-                        Text("VPS Tools Team")
+                        Text(String(.vpsToolsTeam))
                             .foregroundColor(.secondary)
                     }
                     
                     HStack {
-                        Text("构建版本")
+                        Text(String(.buildVersion))
                         Spacer()
-                        Text("Build 1")
+                        Text(String(.build))
                             .foregroundColor(.secondary)
                     }
                     
                     HStack {
-                        Text("发布日期")
+                        Text(String(.releaseDate))
                         Spacer()
-                        Text("2025年8月")
+                        Text(String(.releaseDateValue))
                             .foregroundColor(.secondary)
                     }
                 }
                 
-                Section("技术支持") {
+                Section(String(.technicalSupport)) {
                     HStack {
-                        Text("官方网站")
+                        Text(String(.officialWebsite))
                         Spacer()
-                        Text("https://selfhost.vip/vpstools")
+                        Text(String(.website))
                             .foregroundColor(.blue)
                     }
                     
                     HStack {
-                        Text("联系邮箱")
+                        Text(String(.contactEmail))
                         Spacer()
-                        Text("clap@clap.top")
+                        Text(String(.email))
                             .foregroundColor(.blue)
                     }
                 }
             }
-            .navigationTitle("关于")
+            .navigationTitle(String(.aboutSection))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(String(.done)) {
                         dismiss()
                     }
                 }
@@ -1006,7 +1032,7 @@ struct ExportDataView: View {
                         ProgressView(value: exportProgress)
                             .progressViewStyle(LinearProgressViewStyle())
                         
-                        Text("正在导出数据...")
+                        Text(String(.exportingData))
                             .font(.headline)
                         
                         Text("\(Int(exportProgress * 100))%")
@@ -1020,30 +1046,30 @@ struct ExportDataView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.green)
                         
-                        Text("导出数据")
+                        Text(String(.exportDataTitle))
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text("将 VPS 配置和部署历史导出为备份文件")
+                        Text(String(.exportDataDescription))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
                         
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("导出内容包括：")
+                            Text(String(.exportContent))
                                 .font(.headline)
                             
-                            Text("• VPS 实例配置")
-                            Text("• 部署任务历史")
-                            Text("• 自定义部署模板")
-                            Text("• 应用设置")
+                            Text(String(.vpsInstanceConfig))
+                            Text(String(.deploymentTaskHistory))
+                            Text(String(.customDeploymentTemplates))
+                            Text(String(.appSettings))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(12)
                         
-                        Button("开始导出") {
+                        Button(String(.startExport)) {
                             startExport()
                         }
                         .buttonStyle(.borderedProminent)
@@ -1054,11 +1080,11 @@ struct ExportDataView: View {
                 
                 Spacer()
             }
-            .navigationTitle("导出数据")
+            .navigationTitle(String(.exportData))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("取消") {
+                    Button(String(.cancel)) {
                         dismiss()
                     }
                 }
@@ -1099,7 +1125,7 @@ struct ImportDataView: View {
                         ProgressView(value: importProgress)
                             .progressViewStyle(LinearProgressViewStyle())
                         
-                        Text("正在导入数据...")
+                        Text(String(.importingData))
                             .font(.headline)
                         
                         Text("\(Int(importProgress * 100))%")
@@ -1113,29 +1139,29 @@ struct ImportDataView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.orange)
                         
-                        Text("导入数据")
+                        Text(String(.importDataTitle))
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text("从备份文件恢复 VPS 配置和部署历史")
+                        Text(String(.importDataDescription))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
                         
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("导入说明：")
+                            Text(String(.importInstructions))
                                 .font(.headline)
                             
-                            Text("• 导入将覆盖现有数据")
-                            Text("• 请确保备份文件完整")
-                            Text("• 导入过程不可中断")
+                            Text(String(.importWillOverwrite))
+                            Text(String(.ensureBackupComplete))
+                            Text(String(.importProcessUninterruptible))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(12)
                         
-                        Button("选择备份文件") {
+                        Button(String(.selectBackupFile)) {
                             startImport()
                         }
                         .buttonStyle(.borderedProminent)
@@ -1146,11 +1172,11 @@ struct ImportDataView: View {
                 
                 Spacer()
             }
-            .navigationTitle("导入数据")
+            .navigationTitle(String(.importData))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("取消") {
+                    Button(String(.cancel)) {
                         dismiss()
                     }
                 }
@@ -1183,40 +1209,40 @@ struct TermsView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("使用条款")
+                    Text(String(.termsOfServiceTitle))
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("欢迎使用 VPS 管理工具。请仔细阅读以下使用条款。")
+                    Text(String(.termsOfServiceDescription))
                         .font(.subheadline)
                     
-                    Text("1. 服务说明")
+                    Text(String(.serviceDescription))
                         .font(.headline)
                     
-                    Text("本应用提供 VPS 服务器管理功能，包括部署、监控、连接等操作。")
+                    Text(String(.termsDescription1))
                     
-                    Text("2. 用户责任")
+                    Text(String(.userResponsibility))
                         .font(.headline)
                     
-                    Text("用户应妥善保管 VPS 登录凭据，不得将敏感信息泄露给第三方。")
+                    Text(String(.userResponsibilityText))
                     
-                    Text("3. 服务限制")
+                    Text(String(.serviceLimitations))
                         .font(.headline)
                     
-                    Text("本应用仅提供管理工具，不承担因 VPS 操作造成的任何损失。")
+                    Text(String(.serviceLimitationsText))
                     
-                    Text("4. 隐私保护")
+                    Text(String(.privacyProtection))
                         .font(.headline)
                     
-                    Text("我们承诺保护用户隐私，不会收集或泄露用户的敏感信息。")
+                    Text(String(.privacyProtectionText))
                 }
                 .padding()
             }
-            .navigationTitle("使用条款")
+            .navigationTitle(String(.userPolicy))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(String(.done)) {
                         dismiss()
                     }
                 }
@@ -1234,46 +1260,46 @@ struct PrivacyView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("隐私政策")
+                    Text(String(.privacyPolicyTitle))
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("我们重视您的隐私，本政策说明了我们如何收集、使用和保护您的信息。")
+                    Text(String(.privacyPolicyDescription))
                         .font(.subheadline)
                     
-                    Text("信息收集")
+                    Text(String(.informationCollection))
                         .font(.headline)
                     
-                    Text("我们仅收集必要的应用使用数据，包括：")
-                    Text("• 应用使用统计")
-                    Text("• 错误报告信息")
-                    Text("• 性能数据")
+                    Text(String(.informationCollectionDescription))
+                    Text(String(.appUsageStatistics))
+                    Text(String(.errorReportInformation))
+                    Text(String(.performanceData))
                     
-                    Text("信息使用")
+                    Text(String(.informationUsage))
                         .font(.headline)
                     
-                    Text("收集的信息仅用于：")
-                    Text("• 改进应用功能")
-                    Text("• 解决技术问题")
-                    Text("• 提供用户支持")
+                    Text(String(.informationUsageDescription))
+                    Text(String(.improveAppFunctionality))
+                    Text(String(.resolveTechnicalIssues))
+                    Text(String(.provideUserSupport))
                     
-                    Text("信息保护")
+                    Text(String(.informationProtection))
                         .font(.headline)
                     
-                    Text("我们采用行业标准的安全措施保护您的信息，包括加密存储和传输。")
+                    Text(String(.informationProtectionText))
                     
-                    Text("信息共享")
+                    Text(String(.informationSharing))
                         .font(.headline)
                     
-                    Text("我们不会向第三方出售、交易或转让您的个人信息。")
+                    Text(String(.informationSharingText))
                 }
                 .padding()
             }
-            .navigationTitle("隐私政策")
+            .navigationTitle(String(.privacyPolicy))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(String(.done)) {
                         dismiss()
                     }
                 }
@@ -1291,25 +1317,25 @@ struct FeedbackView: View {
     @State private var showingSubmitSuccess = false
     
     enum FeedbackType: String, CaseIterable {
-        case suggestion = "建议"
-        case bug = "问题反馈"
-        case feature = "功能请求"
-        case other = "其他"
+        case suggestion = "suggestion"
+        case bug = "bug"
+        case feature = "feature"
+        case other = "other"
     }
     
     var body: some View {
         NavigationView {
             Form {
-                Section("反馈类型") {
-                    Picker("类型", selection: $feedbackType) {
+                Section(String(.feedbackType)) {
+                    Picker(String(.feedbackTypePicker), selection: $feedbackType) {
                         ForEach(FeedbackType.allCases, id: \.self) { type in
-                            Text(type.rawValue).tag(type)
+                            Text(feedbackTypeDisplayName(type)).tag(type)
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
                 }
                 
-                Section("反馈内容") {
+                Section(String(.feedbackContent)) {
                     TextEditor(text: $feedbackText)
                         .frame(minHeight: 120)
                         .overlay(
@@ -1318,35 +1344,35 @@ struct FeedbackView: View {
                         )
                 }
                 
-                Section("联系方式（可选）") {
-                    TextField("邮箱地址", text: .constant(""))
+                Section(String(.contactInfoOptional)) {
+                    TextField(String(.emailAddress), text: .constant(""))
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 
                 Section {
-                    Button("提交反馈") {
+                    Button(String(.submitFeedback)) {
                         submitFeedback()
                     }
                     .frame(maxWidth: .infinity)
                     .disabled(feedbackText.isEmpty)
                 }
             }
-            .navigationTitle("意见反馈")
+            .navigationTitle(String(.feedbackTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(String(.cancel)) {
                         dismiss()
                     }
                 }
             }
             .hideKeyboardOnTap()
-            .alert("提交成功", isPresented: $showingSubmitSuccess) {
-                Button("确定") {
+            .alert(String(.submitSuccess), isPresented: $showingSubmitSuccess) {
+                Button(String(.confirm)) {
                     dismiss()
                 }
             } message: {
-                Text("感谢您的反馈，我们会认真考虑您的建议。")
+                Text(String(.submitSuccessMessage))
             }
         }
     }
@@ -1354,5 +1380,18 @@ struct FeedbackView: View {
     private func submitFeedback() {
         // 模拟提交反馈
         showingSubmitSuccess = true
+    }
+    
+    private func feedbackTypeDisplayName(_ type: FeedbackType) -> String {
+        switch type {
+        case .suggestion:
+            return String(.feedbackSuggestion)
+        case .bug:
+            return String(.feedbackBug)
+        case .feature:
+            return String(.feedbackFeature)
+        case .other:
+            return String(.feedbackOther)
+        }
     }
 }
