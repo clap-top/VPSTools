@@ -252,57 +252,6 @@ struct HomeView: View {
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
     
-    // MARK: - Quick Actions Section
-    
-    private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(.quickActions)
-                .font(.headline)
-                .fontWeight(.semibold)
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
-                QuickActionCard(
-                    title: "添加 VPS",
-                    icon: "plus.circle",
-                    color: .blue
-                ) {
-                    showingAddVPS = true
-                }
-                
-                QuickActionCard(
-                    title: "AI 部署",
-                    icon: "brain.head.profile",
-                    color: .purple
-                ) {
-                    showingDeployment = true
-                }
-                
-                QuickActionCard(
-                    title: "模板部署",
-                    icon: "doc.text",
-                    color: .green
-                ) {
-                    showingDeployment = true
-                }
-                
-                QuickActionCard(
-                    title: "监控中心",
-                    icon: "chart.line.uptrend.xyaxis",
-                    color: .orange
-                ) {
-                    showingMonitoring = true
-                }
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
-    }
-    
     // MARK: - System Status Section
     
     private var systemStatusSection: some View {

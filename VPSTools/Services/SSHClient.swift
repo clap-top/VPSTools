@@ -70,9 +70,9 @@ class SSHClient {
         port: Int32(vps.port),
         user: vps.username,
         methods: [
-          SSHMethod.comp_cs : SSHConnectionConfig.Security.allowedCiphers.first ?? "aes128-ctr",
-          SSHMethod.mac_cs : SSHConnectionConfig.Security.allowedMACs.first ?? "hmac-sha2-256",
-          SSHMethod.kex : SSHConnectionConfig.Security.allowedKeyExchanges.first ?? "diffie-hellman-group14-sha256"
+          SSHMethod.comp_cs : SSHConnectionConfig.Security.allowedCiphers,
+          SSHMethod.mac_cs : SSHConnectionConfig.Security.allowedMACs,
+          SSHMethod.kex : SSHConnectionConfig.Security.allowedKeyExchanges
         ],
         keepalive: true
       )

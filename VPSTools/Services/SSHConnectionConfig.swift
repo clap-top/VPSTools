@@ -72,11 +72,11 @@ struct SSHConnectionConfig {
         /// 是否验证服务器指纹
         static let verifyFingerprint: Bool = true
         /// 允许的加密算法
-        static let allowedCiphers: [String] = ["aes128-ctr", "aes192-ctr", "aes256-ctr"]
+        static let allowedCiphers: String = "aes128-ctr,aes192-ctr,aes256-ctr"
         /// 允许的MAC算法
-        static let allowedMACs: [String] = ["hmac-sha2-256", "hmac-sha2-512"]
+        static let allowedMACs: String = "hmac-sha2-256,hmac-sha2-512"
         /// 允许的密钥交换算法
-        static let allowedKeyExchanges: [String] = ["diffie-hellman-group14-sha256", "diffie-hellman-group16-sha512"]
+        static let allowedKeyExchanges: String = "diffie-hellman-group14-sha256,diffie-hellman-group14-sha1,curve25519-sha256,ecdh-sha2-nistp256"
     }
     
     // MARK: - Logging Configuration

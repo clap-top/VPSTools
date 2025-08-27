@@ -37,7 +37,6 @@
 		F684E4BA2E5C08D2001A0E6D /* builtin_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = F684E4B82E5C08D2001A0E6D /* builtin_templates.json */; };
 		F6DA31F82E5EA723000F0D87 /* SSHConnectionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */; };
 		F6DA31FF2E5F018D000F0D87 /* ConnectionPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA31FE2E5F018D000F0D87 /* ConnectionPool.swift */; };
-		F6DA32012E5F01AF000F0D87 /* ConnectionMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA32002E5F01AF000F0D87 /* ConnectionMonitorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,7 +71,6 @@
 		F684E4B82E5C08D2001A0E6D /* builtin_templates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = builtin_templates.json; sourceTree = "<group>"; };
 		F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConnectionConfig.swift; sourceTree = "<group>"; };
 		F6DA31FE2E5F018D000F0D87 /* ConnectionPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionPool.swift; sourceTree = "<group>"; };
-		F6DA32002E5F01AF000F0D87 /* ConnectionMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionMonitorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,7 +154,6 @@
 		A1234567890123456789037C /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				F6DA32002E5F01AF000F0D87 /* ConnectionMonitorView.swift */,
 				18856BC62E597C3400D32A6D /* MonitoringView.swift */,
 				18856BC42E59580D00D32A6D /* QuickDeployView.swift */,
 				F684E4B62E586CF8001A0E6D /* HomeView.swift */,
@@ -283,7 +280,6 @@
 				A1234567890123456789035A /* VPSManagementView.swift in Sources */,
 				18856BC92E5999FB00D32A6D /* LocalizationManager.swift in Sources */,
 				A1234567890123456789038A /* VPSDetailView.swift in Sources */,
-				F6DA32012E5F01AF000F0D87 /* ConnectionMonitorView.swift in Sources */,
 				F684E4B72E586CF8001A0E6D /* HomeView.swift in Sources */,
 				A1234567890123456789039A /* DeploymentExecutionView.swift in Sources */,
 				A1234567890123456789040A /* NaturalLanguageDeploymentExecutionView.swift in Sources */,
