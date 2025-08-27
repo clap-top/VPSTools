@@ -176,7 +176,12 @@ class AppLifecycleManager: ObservableObject {
     private func handleAppWillTerminate() async {
         print("AppLifecycleManager: App will terminate")
         
-        // 立即断开所有 SSH 连接
+        // 使用安全的清理方法
+        if let vpsManager = vpsManager {
+            await vpsManager.prepareForDeallocation()
+        }
+        
+        // 断开所有 SSH 连接
         await disconnectAllSSHConnections()
     }
     

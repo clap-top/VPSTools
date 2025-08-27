@@ -45,15 +45,19 @@ class ConnectionPool: ObservableObject {
     }
     
     deinit {
+        // 立即停止定时器
         healthCheckTimer?.invalidate()
         cleanupTimer?.invalidate()
-        // 在deinit中直接清理，避免异步调用
-        // 注意：在deinit中不能修改MainActor隔离的属性
-        connections.removeAll()
-        connectionQueue.removeAll()
+        
+        // 取消所有重连任务
         reconnectionTasks.values.forEach { $0.cancel() }
-        reconnectionTasks.removeAll()
-        // activeConnections 是 @Published 属性，在deinit中不能修改
+        
+        // 在 deinit 中不能修改 @MainActor 隔离的属性
+        // 这些属性会在对象销毁时自动清理
+        // connections 和 connectionQueue 会在对象销毁时自动清理
+        
+        // 注意：不能在 deinit 中调用 async 方法或修改 @Published 属性
+        print("ConnectionPool: Deinitializing")
     }
     
     // MARK: - Public Methods

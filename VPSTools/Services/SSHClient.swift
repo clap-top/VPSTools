@@ -30,6 +30,21 @@ class SSHClient {
   private var healthCheckTimer: Timer?
   private var keepAliveTimer: Timer?
   
+  // MARK: - Deinitialization
+  
+  deinit {
+    // 立即停止定时器
+    healthCheckTimer?.invalidate()
+    keepAliveTimer?.invalidate()
+    
+    // 清理连接状态
+    libsshClient = nil
+    isConnected = false
+    currentVPS = nil
+    
+    print("SSHClient: Deinitializing")
+  }
+  
   // MARK: - Public Methods
   
   /// Connect to VPS instance

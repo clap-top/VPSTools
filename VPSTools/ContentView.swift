@@ -51,7 +51,13 @@ struct ContentView: View {
         .accentColor(.blue)
         .onAppear {
             // 配置应用生命周期管理器
-//            appLifecycleManager.setServices(vpsManager: vpsManager, deploymentService: deploymentService)
+            appLifecycleManager.setServices(vpsManager: vpsManager, deploymentService: deploymentService)
+        }
+        .onDisappear {
+            // 在视图消失时安全清理资源
+            Task {
+                await vpsManager.prepareForDeallocation()
+            }
         }
     }
 }

@@ -40,14 +40,19 @@ class VPSManager: ObservableObject {
     }
     
     deinit {
-        // 在 deinit 中直接清理定时器，避免调用 @MainActor 方法
+        // 立即停止所有定时器
         monitoringTimers.values.forEach { $0.invalidate() }
         monitoringTimers.removeAll()
         
-        // 清理连接池
-        Task { [weak self] in
-            await self?.disconnectAllSSHClients()
-        }
+        // 取消所有连接测试任务
+        connectionTestTasks.values.forEach { $0.cancel() }
+        connectionTestTasks.removeAll()
+        
+        // 注意：不能在 deinit 中调用 async 方法
+        // 连接池会在对象销毁时自动清理
+        // 如果需要主动清理连接，应该在对象销毁前调用 disconnectAllSSHClients()
+        
+        print("VPSManager: Deinitializing")
     }
     
     // MARK: - Public Methods
@@ -693,6 +698,24 @@ class VPSManager: ObservableObject {
         connectionTestTasks.removeAll()
         
         print("VPSManager: Connection states reset completed")
+    }
+    
+    /// 安全清理方法 - 在对象销毁前调用
+    func prepareForDeallocation() async {
+        print("VPSManager: Preparing for deallocation")
+        
+        // 停止所有监控
+        monitoringTimers.values.forEach { $0.invalidate() }
+        monitoringTimers.removeAll()
+        
+        // 取消所有连接测试任务
+        connectionTestTasks.values.forEach { $0.cancel() }
+        connectionTestTasks.removeAll()
+        
+        // 清理所有 SSH 连接
+        await disconnectAllSSHClients()
+        
+        print("VPSManager: Deallocation preparation completed")
     }
 }
 
