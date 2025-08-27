@@ -164,6 +164,12 @@ class AppLifecycleManager: ObservableObject {
         }
         
         print("AppLifecycleManager: App was in background for \(String(format: "%.1f", backgroundDuration)) seconds")
+        
+        // 如果后台时间超过30秒，重新初始化连接状态
+        if backgroundDuration > 30 {
+            print("AppLifecycleManager: Background duration > 30s, reinitializing connection state")
+            await reinitializeConnectionState()
+        }
     }
     
     /// 处理应用即将终止
@@ -182,6 +188,25 @@ class AppLifecycleManager: ObservableObject {
         if !isAppActive {
             await disconnectAllSSHConnections()
         }
+    }
+    
+    /// 重新初始化连接状态
+    private func reinitializeConnectionState() async {
+        print("AppLifecycleManager: Reinitializing connection state")
+        
+        // 确保所有连接都已断开
+        await disconnectAllSSHConnections()
+        
+        // 等待一小段时间确保清理完成
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5秒
+        
+        // 重新初始化VPSManager状态
+        if let vpsManager = vpsManager {
+            // 重置连接状态
+            await vpsManager.resetConnectionStates()
+        }
+        
+        print("AppLifecycleManager: Connection state reinitialized")
     }
 }
 

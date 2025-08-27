@@ -516,10 +516,10 @@ struct VPSMonitoringDetailView: View {
     @State private var showingCharts = true
     
     enum TimeRange: String, CaseIterable {
-        case hour = "1小时"
-        case day = "24小时"
-        case week = "7天"
-        case month = "30天"
+        case hour = "1h"
+        case day = "24h"
+        case week = "7d"
+        case month = "30d"
     }
     
     var body: some View {
@@ -639,7 +639,7 @@ struct VPSMonitoringDetailView: View {
             
             Spacer()
             
-            Picker("时间范围", selection: $selectedTimeRange) {
+            Picker(LocalizationManager.shared.localizedString(.timeRange), selection: $selectedTimeRange) {
                 ForEach(TimeRange.allCases, id: \.self) { range in
                     Text(range.rawValue).tag(range)
                 }
@@ -666,7 +666,7 @@ struct VPSMonitoringDetailView: View {
             
             // 内存使用率图表
             ChartCard(
-                title: "内存使用率",
+                title: LocalizationManager.shared.localizedString(.memoryUsage),
                 icon: "memorychip",
                 color: .green
             ) {
@@ -694,7 +694,7 @@ struct VPSMonitoringDetailView: View {
             
             // 磁盘使用率图表
             ChartCard(
-                title: "磁盘使用率",
+                title: LocalizationManager.shared.localizedString(.diskUsage),
                 icon: "externaldrive",
                 color: .orange
             ) {
@@ -732,11 +732,11 @@ struct VPSMonitoringDetailView: View {
             
             if let systemInfo = vps.systemInfo {
                 VStack(spacing: 8) {
-                    InfoRow(label: "操作系统", value: systemInfo.osName)
-                    InfoRow(label: "内核版本", value: systemInfo.kernelVersion)
-                    InfoRow(label: "CPU 型号", value: systemInfo.cpuModel)
-                    InfoRow(label: "运行时间", value: formatUptime(systemInfo.uptime))
-                    InfoRow(label: "负载", value: formatLoadAverage(systemInfo.loadAverage))
+                    InfoRow(label: LocalizationManager.shared.localizedString(.operatingSystem), value: systemInfo.osName)
+                    InfoRow(label: LocalizationManager.shared.localizedString(.coreVersion), value: systemInfo.kernelVersion)
+                    InfoRow(label: LocalizationManager.shared.localizedString(.cpuType), value: systemInfo.cpuModel)
+                    InfoRow(label: LocalizationManager.shared.localizedString(.runTime), value: formatUptime(systemInfo.uptime))
+                    InfoRow(label: LocalizationManager.shared.localizedString(.load), value: formatLoadAverage(systemInfo.loadAverage))
                 }
                             } else {
                     Text(.noSystemInfo)
@@ -785,9 +785,9 @@ struct VPSMonitoringDetailView: View {
     
     private var connectionStatusText: String {
         if let testResult = vpsManager.connectionTestResults[vps.id] {
-            return testResult.sshSuccess ? "在线" : "离线"
+            return testResult.sshSuccess ? LocalizationManager.shared.localizedString(.online) : LocalizationManager.shared.localizedString(.offline)
         }
-        return "未知"
+        return LocalizationManager.shared.localizedString(.unknown)
     }
     
     private func memoryUsageColor(_ usage: Double) -> Color {
@@ -817,17 +817,17 @@ struct VPSMonitoringDetailView: View {
         let minutes = Int(uptime) % 3600 / 60
         
         if days > 0 {
-            return "\(days)天 \(hours)小时"
+            return "\(days)\(LocalizationManager.shared.localizedString(.day)) \(hours)\(LocalizationManager.shared.localizedString(.hour))"
         } else if hours > 0 {
-            return "\(hours)小时 \(minutes)分钟"
+            return "\(hours)\(LocalizationManager.shared.localizedString(.hour)) \(minutes)\(LocalizationManager.shared.localizedString(.minutes))"
         } else {
-            return "\(minutes)分钟"
+            return "\(minutes)\(LocalizationManager.shared.localizedString(.minutes))"
         }
     }
     
     private func formatLoadAverage(_ loadAverage: [Double]) -> String {
         guard loadAverage.count >= 3 else {
-            return "暂无数据"
+            return LocalizationManager.shared.localizedString(.noData)
         }
         
         // 额外的安全检查

@@ -358,7 +358,7 @@ struct QuickDeployView: View {
         do {
             let testResult = await vpsManager.testConnection(for: vps)
             if !testResult.isConnected {
-                let errorMessage = testResult.sshError ?? "未知连接错误"
+                let errorMessage = testResult.sshError ?? LocalizationManager.shared.localizedString(.unknownError)
                 throw VPSManagerError.connectionFailed(errorMessage)
             }
         } catch {
@@ -514,7 +514,7 @@ struct RecentDeploymentCard: View {
            let template = deploymentService.getTemplate(by: templateId.uuidString) {
             return template.name
         } else {
-            return "自定义部署"
+            return LocalizationManager.shared.localizedString(.customDeployment)
         }
     }
 }
@@ -609,7 +609,7 @@ struct TemplateSelectionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("返回") {
+                    Button(LocalizationManager.shared.localizedString(.back)) {
                         dismiss()
                     }
                 }

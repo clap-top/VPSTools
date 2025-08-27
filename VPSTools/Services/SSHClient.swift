@@ -1,20 +1,34 @@
 import Foundation
 import SwiftLibSSH
+import Combine
 
 // MARK: - SSH Client
 
 class SSHClient {
   // MARK: - Configuration
-  private let connectionTimeout: TimeInterval = 30.0
-  private let commandTimeout: TimeInterval = 60.0
+  private let connectionTimeout: TimeInterval = SSHConnectionConfig.Timeouts.connection
+  private let commandTimeout: TimeInterval = SSHConnectionConfig.Timeouts.command
+  private let authenticationTimeout: TimeInterval = SSHConnectionConfig.Timeouts.authentication
   
   // MARK: - Connection State
   private var isConnected = false
   private var currentVPS: VPSInstance?
   private var libsshClient: SwiftLibSSH?
+  private var connectionStartTime: Date?
+  private var lastActivityTime: Date?
   
   // MARK: - Connection Metrics
   private var connectionMetrics = SSHConnectionMetrics()
+  private var commandQueue = DispatchQueue(label: "ssh.command.queue", qos: SSHConnectionConfig.Performance.commandQueueQoS)
+  
+  // MARK: - Error Tracking
+  private var consecutiveErrors: Int = 0
+  private var lastError: Error?
+  private var errorHistory: [SSHError] = []
+  
+  // MARK: - Health Monitoring
+  private var healthCheckTimer: Timer?
+  private var keepAliveTimer: Timer?
   
   // MARK: - Public Methods
   
@@ -30,36 +44,68 @@ class SSHClient {
 
     do {
       print("Connecting to VPS: \(vps.name) at \(vps.host):\(vps.port)")
+      
+      // 重置错误计数
+      consecutiveErrors = 0
+      lastError = nil
 
-      // Create SwiftLibSSH client
+      // Create SwiftLibSSH client with enhanced configuration
       let client = SwiftLibSSH(
         host: vps.host,
         port: Int32(vps.port),
         user: vps.username,
-        methods: [SSHMethod.comp_cs : "aes128-ctr"],
+        methods: [
+          SSHMethod.comp_cs : SSHConnectionConfig.Security.allowedCiphers.first ?? "aes128-ctr",
+          SSHMethod.mac_cs : SSHConnectionConfig.Security.allowedMACs.first ?? "hmac-sha2-256",
+          SSHMethod.kex : SSHConnectionConfig.Security.allowedKeyExchanges.first ?? "diffie-hellman-group14-sha256"
+        ],
         keepalive: true
       )
       client.sessionDelegate = self
       self.libsshClient = client
       
-      // Connect
-      let connectResult = await client.connect()
+      // 设置连接超时
+      let connectTask = Task {
+        await client.connect()
+      }
+      
+      let connectResult = try await withTimeout(seconds: connectionTimeout) {
+        await connectTask.value
+      }
+      
       if !connectResult {
         throw SSHError.connectionFailed
       }
       
-      // Handshake
-      let handshakeResult = await client.handshake()
+      // Handshake with timeout
+      let handshakeTask = Task {
+        await client.handshake()
+      }
+      
+      let handshakeResult = try await withTimeout(seconds: connectionTimeout) {
+        await handshakeTask.value
+      }
+      
       if !handshakeResult {
         throw SSHError.connectionFailed
       }
       
-      // Authenticate
+      // Authenticate with timeout
       var authResult = false
       if vps.password != nil {
-        authResult = await client.authenticate(password: vps.password ?? "")
+        let authTask = Task {
+          await client.authenticate(password: vps.password ?? "")
+        }
+        authResult = try await withTimeout(seconds: authenticationTimeout) {
+          await authTask.value
+        }
       } else if vps.privateKey != nil {
-        authResult = await client.authenticate(privateKey: vps.privateKey ?? "", passphrase: vps.privateKeyPhrase ?? "")
+        let authTask = Task {
+          await client.authenticate(privateKey: vps.privateKey ?? "", passphrase: vps.privateKeyPhrase ?? "")
+        }
+        authResult = try await withTimeout(seconds: authenticationTimeout) {
+          await authTask.value
+        }
       }
       
       if !authResult {
@@ -68,15 +114,28 @@ class SSHClient {
 
       currentVPS = vps
       isConnected = true
+      connectionStartTime = Date()
+      lastActivityTime = Date()
+      
       connectionMetrics.totalConnections += 1
       connectionMetrics.successfulConnections += 1
       connectionMetrics.lastConnectionTime = Date()
+      
+      // 启动健康检查和保活
+      startHealthMonitoring()
 
       print("Successfully connected to VPS: \(vps.name)")
 
     } catch {
       isConnected = false
       currentVPS = nil
+      consecutiveErrors += 1
+      lastError = error
+      
+      if let sshError = error as? SSHError {
+        errorHistory.append(sshError)
+      }
+      
       connectionMetrics.totalConnections += 1
       connectionMetrics.failedConnections += 1
       print("Failed to connect to VPS \(vps.name): \(error)")
@@ -92,24 +151,18 @@ class SSHClient {
 
     print("Executing command: \(command)")
 
-    do {
-      let result = await client.exec(command: command)
+    
+    let result = await client.exec(command: command)
       guard let data = result.stdout else {
-        return ""
-      }
-      
-      connectionMetrics.totalCommands += 1
-      connectionMetrics.successfulCommands += 1
-      
-      let output = String(data: data, encoding: .utf8) ?? ""
-      print("Command executed successfully")
-      return output
-    } catch {
-      connectionMetrics.totalCommands += 1
-      connectionMetrics.failedCommands += 1
-      print("Command execution failed: \(error)")
-      throw SSHError.commandFailed(command)
+          return ""
     }
+
+    connectionMetrics.totalCommands += 1
+    connectionMetrics.successfulCommands += 1
+
+    let output = String(data: data, encoding: .utf8) ?? ""
+    print("Command executed successfully")
+    return output
   }
 
   /// Write file content to remote path using SSH
@@ -185,7 +238,6 @@ class SSHClient {
 
   /// Test connection to VPS
   func testConnection(_ vps: VPSInstance) async throws -> Bool {
-    do {
       // Try to connect temporarily
       let tempClient = SwiftLibSSH(
         host: vps.host,
@@ -202,10 +254,6 @@ class SSHClient {
       
       let handshakeResult = await tempClient.handshake()
       return handshakeResult
-      
-    } catch {
-      return false
-    }
   }
 
   /// Disconnect from VPS
@@ -213,6 +261,12 @@ class SSHClient {
     if let vps = currentVPS {
       print("Disconnecting from VPS: \(vps.name)")
     }
+
+    // 停止定时器
+    healthCheckTimer?.invalidate()
+    keepAliveTimer?.invalidate()
+    healthCheckTimer = nil
+    keepAliveTimer = nil
 
     libsshClient = nil
     isConnected = false
@@ -234,6 +288,119 @@ class SSHClient {
       connectedSince: startTime,
       lastActivity: connectionMetrics.lastDisconnectionTime ?? startTime,
       isHealthy: isConnected
+    )
+  }
+  
+  /// 检查连接健康状态
+  func checkConnectionHealth() async -> Bool {
+    guard isConnected, let client = libsshClient else {
+      return false
+    }
+    
+    do {
+      // 执行一个简单的命令来测试连接
+      let result = try await withTimeout(seconds: 5.0) {
+        await client.exec(command: "echo 'health_check'")
+      }
+      
+      let isHealthy = result.stdout != nil
+      if isHealthy {
+        consecutiveErrors = 0
+        lastActivityTime = Date()
+      } else {
+        consecutiveErrors += 1
+      }
+      
+      return isHealthy
+    } catch {
+      consecutiveErrors += 1
+      lastError = error
+      return false
+    }
+  }
+  
+  // MARK: - Private Methods
+  
+  /// 超时处理
+  private func withTimeout<T>(seconds: TimeInterval, operation: @escaping () async -> T) async throws -> T {
+    return try await withThrowingTaskGroup(of: T.self) { group in
+      group.addTask {
+        await operation()
+      }
+      
+      group.addTask {
+        try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+        throw SSHError.timeout
+      }
+      
+      let result = try await group.next()!
+      group.cancelAll()
+      return result
+    }
+  }
+  
+  /// 启动健康监控
+  private func startHealthMonitoring() {
+    // 健康检查定时器
+    healthCheckTimer = Timer.scheduledTimer(withTimeInterval: SSHConnectionConfig.KeepAlive.interval, repeats: true) { [weak self] _ in
+      Task {
+        await self?.performHealthCheck()
+      }
+    }
+    
+    // 保活定时器
+    keepAliveTimer = Timer.scheduledTimer(withTimeInterval: SSHConnectionConfig.KeepAlive.interval * 2, repeats: true) { [weak self] _ in
+      Task {
+        await self?.performKeepAlive()
+      }
+    }
+  }
+  
+  /// 执行健康检查
+  private func performHealthCheck() async {
+    guard isConnected else { return }
+    
+    let isHealthy = await checkConnectionHealth()
+    if !isHealthy {
+      print("SSHClient: Health check failed for VPS: \(currentVPS?.name ?? "Unknown")")
+      
+      // 如果连续错误次数过多，标记连接为不健康
+      if consecutiveErrors >= SSHConnectionConfig.ConnectionPool.maxErrorCount {
+        isConnected = false
+        print("SSHClient: Connection marked as unhealthy due to consecutive errors")
+      }
+    }
+  }
+  
+  /// 执行保活
+  private func performKeepAlive() async {
+    guard isConnected, let client = libsshClient else { return }
+    
+    do {
+      let result = try await withTimeout(seconds: 5.0) {
+        await client.exec(command: SSHConnectionConfig.KeepAlive.command)
+      }
+      
+      if result.stdout != nil {
+        lastActivityTime = Date()
+      }
+    } catch {
+      print("SSHClient: Keep-alive failed for VPS: \(currentVPS?.name ?? "Unknown"): \(error)")
+    }
+  }
+  
+  /// 获取连接统计信息
+  func getDetailedStats() -> SSHConnectionStats {
+    return SSHConnectionStats(
+      isConnected: isConnected,
+      vpsName: currentVPS?.name ?? "Unknown",
+      host: currentVPS?.host ?? "Unknown",
+      connectedSince: connectionStartTime,
+      lastActivity: lastActivityTime,
+      consecutiveErrors: consecutiveErrors,
+      totalErrors: errorHistory.count,
+      connectionDuration: connectionStartTime.map { Date().timeIntervalSince($0) },
+      metrics: connectionMetrics
     )
   }
 }
@@ -300,5 +467,37 @@ extension SSHClient: SessionDelegate {
   
   func trace(ssh: SwiftLibSSH, message: String) async {
     print("SSH trace: \(message)")
+  }
+}
+
+// MARK: - SSH Connection Stats
+
+/// SSH连接详细统计信息
+struct SSHConnectionStats {
+  let isConnected: Bool
+  let vpsName: String
+  let host: String
+  let connectedSince: Date?
+  let lastActivity: Date?
+  let consecutiveErrors: Int
+  let totalErrors: Int
+  let connectionDuration: TimeInterval?
+  let metrics: SSHConnectionMetrics
+  
+  var isHealthy: Bool {
+    return isConnected && consecutiveErrors < SSHConnectionConfig.ConnectionPool.maxErrorCount
+  }
+  
+  var uptime: String {
+    guard let duration = connectionDuration else { return "Unknown" }
+    let hours = Int(duration) / 3600
+    let minutes = Int(duration) % 3600 / 60
+    let seconds = Int(duration) % 60
+    return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+  }
+  
+  var errorRate: Double {
+    guard metrics.totalCommands > 0 else { return 0.0 }
+    return Double(metrics.failedCommands) / Double(metrics.totalCommands) * 100.0
   }
 }

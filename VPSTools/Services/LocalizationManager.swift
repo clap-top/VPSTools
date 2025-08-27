@@ -120,6 +120,10 @@ enum LocalizationKey: String, CaseIterable {
     case basicInfo = "basic_info"
     case tags = "tags"
     case operatingSystem = "operating_system"
+    case coreVersion = "core_version"
+    case cpuType = "cpu_type"
+    case runTime = "run_time"
+    case load = "load"
     case cpuCores = "cpu_cores"
     case loadAverage = "load_average"
     case uptime = "uptime"
@@ -150,6 +154,7 @@ enum LocalizationKey: String, CaseIterable {
     case monitorViewTitle = "monitor_view_title"
     case cpuUsage = "cpu_usage"
     case memoryUsage = "memory_usage"
+    case diskUsage = "disk_usage"
     case toggleAutoRefresh = "toggle_auto_refresh"
     case autoRefreshInterval = "auto_refresh_interval"
     case instruction = "instruction"
@@ -445,6 +450,7 @@ enum LocalizationKey: String, CaseIterable {
     case connectionFailedCheck = "connection_failed_check"
     case configError = "config_error"
     case saveFailed = "save_failed"
+    case unknownError = "unknown_error"
     
     // Additional AI Deployment
     case willExecuteFollowingCommands = "will_execute_following_commands"
@@ -521,6 +527,10 @@ extension LocalizationKey {
             .basicInfo: "基本信息",
             .tags: "标签",
             .operatingSystem: "操作系统",
+            .coreVersion: "内核版本",
+            .cpuType: "CPU 类型",
+            .runTime: "运行时间",
+            .load: "负载",
             .cpuCores: "核",
             .loadAverage: "负载平均值",
             .uptime: "运行时间",
@@ -550,7 +560,8 @@ extension LocalizationKey {
             .autoRefreshDescription: "自动刷新会定期更新 VPS 状态和系统信息，可能会消耗一定的网络流量。",
             .monitorViewTitle: "监控中心",
             .cpuUsage: "平均 CPU",
-            .memoryUsage: "平均内存",
+            .memoryUsage: "内存占用",
+            .diskUsage: "磁盘使用量",
             .toggleAutoRefresh: "启用自动刷新",
             .autoRefreshInterval: "刷新间隔",
             .instruction: "说明",
@@ -848,7 +859,8 @@ extension LocalizationKey {
             .connectionFailed: "连接失败：%@\n\n请检查：\n• 主机地址是否正确\n• 端口是否开放\n• 用户名和密码是否正确\n• 网络连接是否正常",
             .connectionFailedCheck: "连接失败：%@\n\n请检查：\n• 主机地址是否正确\n• 端口是否开放\n• 用户名和密码是否正确\n• 网络连接是否正常",
             .configError: "配置错误：%@",
-            .saveFailed: "保存失败：%@"
+            .saveFailed: "保存失败：%@",
+            .unknownError: "未知错误"
         ]
     }
     
@@ -905,6 +917,10 @@ extension LocalizationKey {
             .basicInfo: "Basic Information",
             .tags: "Tags",
             .operatingSystem: "Operating System",
+            .coreVersion: "Kernel Version",
+            .cpuType: "CPU Type",
+            .runTime: "UP Time",
+            .load: "Load",
             .cpuCores: "cores",
             .loadAverage: "Load Average",
             .uptime: "Uptime",
@@ -935,6 +951,7 @@ extension LocalizationKey {
             .monitorViewTitle: "Monitoring Center",
             .cpuUsage: "CPU Usage",
             .memoryUsage: "Memory Usage",
+            .diskUsage: "Disk Usage",
             .toggleAutoRefresh: "Enable Auto Refresh",
             .autoRefreshInterval: "Refresh Interval",
             .instruction: "Instruction",
@@ -1232,7 +1249,8 @@ extension LocalizationKey {
             .connectionFailed: "Connection failed: %@\n\nPlease check:\n• Host address is correct\n• Port is open\n• Username and password are correct\n• Network connection is normal",
             .connectionFailedCheck: "Connection failed: %@\n\nPlease check:\n• Host address is correct\n• Port is open\n• Username and password are correct\n• Network connection is normal",
             .configError: "Configuration error: %@",
-            .saveFailed: "Save failed: %@"
+            .saveFailed: "Save failed: %@",
+            .unknownError: "Unknown error"
         ]
     }
 }

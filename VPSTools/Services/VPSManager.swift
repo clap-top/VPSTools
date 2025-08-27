@@ -18,11 +18,9 @@ class VPSManager: ObservableObject {
     
     // MARK: - Private Properties
     
-    // SSH客户端管理
-    private var sshClients: [UUID: SSHClient] = [:]
-    private var sshConnectionStates: [UUID: SSHConnectionState] = [:]
+    // 连接池管理
+    let connectionPool = ConnectionPool()
     @Published var activeSSHConnections: Int = 0
-    private let maxConcurrentConnections: Int = 10
     
     private var cancellables = Set<AnyCancellable>()
     private var monitoringTimers: [UUID: Timer] = [:]
@@ -46,7 +44,7 @@ class VPSManager: ObservableObject {
         monitoringTimers.values.forEach { $0.invalidate() }
         monitoringTimers.removeAll()
         
-        // 清理SSH连接（异步执行）
+        // 清理连接池
         Task { [weak self] in
             await self?.disconnectAllSSHClients()
         }
@@ -158,7 +156,7 @@ class VPSManager: ObservableObject {
         
         // 检查是否在短时间内已经测试过
         if let lastTest = connectionTestResults[vps.id]?.timestamp,
-           Date().timeIntervalSince(lastTest) < 10 { // 减少到10秒内不重复测试
+           Date().timeIntervalSince(lastTest) < 30 { // 减少到30秒内不重复测试
             return connectionTestResults[vps.id] ?? ConnectionTestResult(pingSuccess: false, sshSuccess: false)
         }
         
@@ -525,89 +523,23 @@ class VPSManager: ObservableObject {
         }
     }
     
-    // MARK: - SSH Client Management
+    // MARK: - Connection Pool Management
     
-    /// SSH连接状态
-    enum SSHConnectionState: Equatable {
-        case disconnected
-        case connecting
-        case connected
-        case failed(Error)
-        case timeout
-        
-        static func == (lhs: SSHConnectionState, rhs: SSHConnectionState) -> Bool {
-            switch (lhs, rhs) {
-            case (.disconnected, .disconnected),
-                 (.connecting, .connecting),
-                 (.connected, .connected),
-                 (.timeout, .timeout):
-                return true
-            case (.failed, .failed):
-                return true  // 简化处理，认为所有失败状态相等
-            default:
-                return false
-            }
-        }
+    /// 获取VPS的SSH客户端
+    private func getSSHClient(for vps: VPSInstance) async throws -> SSHClient {
+        return try await connectionPool.getConnection(for: vps)
     }
     
-    /// 获取VPS的SSH客户端，如果不存在则创建
-    private func getSSHClient(for vps: VPSInstance) -> SSHClient {
-        if let existingClient = sshClients[vps.id] {
-            return existingClient
-        }
-        
-        let newClient = SSHClient()
-        sshClients[vps.id] = newClient
-        sshConnectionStates[vps.id] = .disconnected
-        
-        print("Created new SSH client for VPS: \(vps.name)")
-        return newClient
-    }
-    
-    /// 连接到VPS
-    private func connectSSH(to vps: VPSInstance) async throws {
-        // 检查并发连接限制
-        guard activeSSHConnections < maxConcurrentConnections else {
-            throw VPSManagerError.connectionFailed("达到最大并发连接数限制")
-        }
-        
-        let client = getSSHClient(for: vps)
-        sshConnectionStates[vps.id] = .connecting
-        
-        do {
-            try await client.connect(to: vps)
-            sshConnectionStates[vps.id] = .connected
-            activeSSHConnections += 1
-            print("Successfully connected to VPS: \(vps.name)")
-        } catch {
-            sshConnectionStates[vps.id] = .failed(error)
-            print("Failed to connect to VPS \(vps.name): \(error)")
-            throw error
-        }
-    }
-    
-    /// 断开VPS连接
-    private func disconnectSSH(from vps: VPSInstance) async {
-        guard let client = sshClients[vps.id] else { return }
-        
-        await client.disconnect()
-        sshConnectionStates[vps.id] = .disconnected
-        sshClients[vps.id] = nil
-        
-        if activeSSHConnections > 0 {
-            activeSSHConnections -= 1
-        }
-        
-        print("Disconnected from VPS: \(vps.name)")
+    /// 释放SSH连接
+    private func releaseSSHConnection(for vps: VPSInstance) {
+        connectionPool.releaseConnection(for: vps.id)
     }
     
     /// 执行SSH命令
     private func executeSSHCommand(_ command: String, on vps: VPSInstance) async throws -> String {
-        let client = getSSHClient(for: vps)
-        
-        // 确保连接状态
-        if sshConnectionStates[vps.id] != .connected {
-            try await connectSSH(to: vps)
+        let client = try await getSSHClient(for: vps)
+        defer {
+            releaseSSHConnection(for: vps)
         }
         
         return try await client.executeCommand(command)
@@ -615,19 +547,19 @@ class VPSManager: ObservableObject {
     
     /// 测试VPS连接
     private func testSSHConnection(for vps: VPSInstance) async -> (success: Bool, error: String?, systemInfo: SystemInfo?) {
-        let client = getSSHClient(for: vps)
-        
         do {
+            let client = try await getSSHClient(for: vps)
+            defer {
+                releaseSSHConnection(for: vps)
+            }
+            
             // 测试基本连接
             let isReachable = try await client.testConnection(vps)
             
             if isReachable {
                 // 尝试获取系统信息
                 do {
-                    try await connectSSH(to: vps)
                     let systemInfo = try await fetchSystemInfo(for: vps)
-                    await disconnectSSH(from: vps)
-                    
                     return (success: true, error: nil, systemInfo: systemInfo)
                 } catch {
                     return (success: true, error: "Connection successful but failed to get system info: \(error.localizedDescription)", systemInfo: nil)
@@ -642,40 +574,48 @@ class VPSManager: ObservableObject {
     
     /// 检查是否已连接
     private func isSSHConnected(to vps: VPSInstance) -> Bool {
-        return sshConnectionStates[vps.id] == .connected
+        return connectionPool.getConnectionStatus(for: vps.id)?.isConnected ?? false
     }
     
     /// 清理VPS的SSH客户端
     private func removeSSHClient(for vps: VPSInstance) async {
-        await disconnectSSH(from: vps)
-        sshClients.removeValue(forKey: vps.id)
-        sshConnectionStates.removeValue(forKey: vps.id)
+        await connectionPool.disconnectConnection(for: vps.id)
         print("Removed SSH client for VPS: \(vps.name)")
     }
     
     /// 清理所有连接
     func disconnectAllSSHClients() async {
-        for (vpsId, client) in sshClients {
-            await client.disconnect()
-            sshConnectionStates[vpsId] = .disconnected
+        print("VPSManager: Starting to disconnect all SSH clients")
+        
+        // 清理连接池中的所有连接
+        for vpsId in connectionPool.connectionMetrics.keys {
+            await connectionPool.disconnectConnection(for: vpsId)
         }
+        
         activeSSHConnections = 0
-        print("Disconnected all SSH clients")
+        print("VPSManager: All SSH clients disconnected and cleaned up")
     }
     
     /// 获取连接统计信息
     func getSSHConnectionStats() -> (total: Int, active: Int, failed: Int) {
-        let total = sshClients.count
-        let active = sshConnectionStates.values.filter { state in
-            if case .connected = state { return true }
-            return false
-        }.count
-        let failed = sshConnectionStates.values.filter { state in
-            if case .failed = state { return true }
+        let stats = connectionPool.getPoolStats()
+        let failed = connectionPool.healthStatus.values.filter { health in
+            if case .failed = health { return true }
+            if case .unrecoverable = health { return true }
             return false
         }.count
         
-        return (total: total, active: active, failed: failed)
+        return (total: stats.totalConnections, active: stats.healthyConnections, failed: failed)
+    }
+    
+    /// 获取连接池统计信息
+    func getConnectionPoolStats() -> PoolStats {
+        return connectionPool.getPoolStats()
+    }
+    
+    /// 获取连接健康状态
+    func getConnectionHealth(for vpsId: UUID) -> ConnectionHealth? {
+        return connectionPool.healthStatus[vpsId]
     }
     
     // MARK: - Public SSH Methods for External Services
@@ -687,11 +627,9 @@ class VPSManager: ObservableObject {
     
     /// 写入文件到VPS（供外部服务使用）
     func writeFile(content: String, to path: String, on vps: VPSInstance) async throws {
-        let client = getSSHClient(for: vps)
-        
-        // 确保连接状态
-        if sshConnectionStates[vps.id] != .connected {
-            try await connectSSH(to: vps)
+        let client = try await getSSHClient(for: vps)
+        defer {
+            releaseSSHConnection(for: vps)
         }
         
         try await client.writeFile(content: content, to: path)
@@ -699,12 +637,12 @@ class VPSManager: ObservableObject {
     
     /// 连接到VPS（供外部服务使用）
     func connectToVPS(_ vps: VPSInstance) async throws {
-        try await connectSSH(to: vps)
+        _ = try await getSSHClient(for: vps)
     }
     
     /// 断开VPS连接（供外部服务使用）
     func disconnectFromVPS(_ vps: VPSInstance) async {
-        await disconnectSSH(from: vps)
+        await connectionPool.disconnectConnection(for: vps.id)
     }
     
     /// 清除所有 VPS 数据
@@ -722,8 +660,6 @@ class VPSManager: ObservableObject {
         vpsInstances.removeAll()
         connectionTestResults.removeAll()
         monitoringData.removeAll()
-        sshClients.removeAll()
-        sshConnectionStates.removeAll()
         activeSSHConnections = 0
         lastError = nil
         isLoading = false
@@ -737,6 +673,26 @@ class VPSManager: ObservableObject {
         saveVPSInstances()
         
         print("All VPS data cleared")
+    }
+    
+    /// 重置连接状态（用于应用从后台恢复）
+    func resetConnectionStates() async {
+        print("VPSManager: Resetting connection states")
+        
+        // 清理连接池
+        for vpsId in connectionPool.connectionMetrics.keys {
+            await connectionPool.disconnectConnection(for: vpsId)
+        }
+        activeSSHConnections = 0
+        
+        // 重置连接测试状态
+        connectionTestStatus.removeAll()
+        
+        // 取消所有正在进行的连接测试
+        connectionTestTasks.values.forEach { $0.cancel() }
+        connectionTestTasks.removeAll()
+        
+        print("VPSManager: Connection states reset completed")
     }
 }
 
