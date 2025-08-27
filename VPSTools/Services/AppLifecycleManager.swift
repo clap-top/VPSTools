@@ -143,6 +143,7 @@ class AppLifecycleManager: ObservableObject {
                 // 再次检查应用是否仍在后台
                 if !isAppActive {
                     print("AppLifecycleManager: Auto-disconnecting SSH connections after background delay")
+                    vpsManager?.stopAllMonitoring()
                     await disconnectAllSSHConnections()
                 }
             }

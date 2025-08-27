@@ -35,6 +35,8 @@
 		F684E4B52E585ED9001A0E6D /* EditVPSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B42E585ED9001A0E6D /* EditVPSView.swift */; };
 		F684E4B72E586CF8001A0E6D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F684E4B62E586CF8001A0E6D /* HomeView.swift */; };
 		F684E4BA2E5C08D2001A0E6D /* builtin_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = F684E4B82E5C08D2001A0E6D /* builtin_templates.json */; };
+		F6DA31F82E5EA723000F0D87 /* SSHConnectionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */; };
+		F6DA31F92E5EA723000F0D87 /* SSHConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA31F72E5EA723000F0D87 /* SSHConnectionManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +69,8 @@
 		F684E4B42E585ED9001A0E6D /* EditVPSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVPSView.swift; sourceTree = "<group>"; };
 		F684E4B62E586CF8001A0E6D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		F684E4B82E5C08D2001A0E6D /* builtin_templates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = builtin_templates.json; sourceTree = "<group>"; };
+		F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConnectionConfig.swift; sourceTree = "<group>"; };
+		F6DA31F72E5EA723000F0D87 /* SSHConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConnectionManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +138,8 @@
 		A1234567890123456789018C /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */,
+				F6DA31F72E5EA723000F0D87 /* SSHConnectionManager.swift */,
 				18856BC82E5999FB00D32A6D /* LocalizationManager.swift */,
 				18856BC22E594E4B00D32A6D /* AppLifecycleManager.swift */,
 				F684E4B02E582070001A0E6D /* SingBoxInstallService.swift */,
@@ -255,6 +261,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1234567890123456789012C /* ContentView.swift in Sources */,
+				F6DA31F82E5EA723000F0D87 /* SSHConnectionConfig.swift in Sources */,
+				F6DA31F92E5EA723000F0D87 /* SSHConnectionManager.swift in Sources */,
 				A1234567890123456789012A /* VPSTools.swift in Sources */,
 				18856BC72E597C3500D32A6D /* MonitoringView.swift in Sources */,
 				A1234567890123456789016C /* VPSModels.swift in Sources */,

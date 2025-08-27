@@ -11,7 +11,6 @@ class VPSManager: ObservableObject {
     // MARK: - Published Properties
     
     @Published var vpsInstances: [VPSInstance] = []
-    @Published var selectedVPS: VPSInstance?
     @Published var isLoading: Bool = false
     @Published var lastError: String?
     @Published var connectionTestResults: [UUID: ConnectionTestResult] = [:]
@@ -593,6 +592,7 @@ class VPSManager: ObservableObject {
         
         await client.disconnect()
         sshConnectionStates[vps.id] = .disconnected
+        sshClients[vps.id] = nil
         
         if activeSSHConnections > 0 {
             activeSSHConnections -= 1
@@ -720,7 +720,6 @@ class VPSManager: ObservableObject {
         
         // 清除数据
         vpsInstances.removeAll()
-        selectedVPS = nil
         connectionTestResults.removeAll()
         monitoringData.removeAll()
         sshClients.removeAll()
