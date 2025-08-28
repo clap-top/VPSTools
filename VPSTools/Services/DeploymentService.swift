@@ -378,7 +378,16 @@ class DeploymentService: ObservableObject {
         }
         
         addLog(to: task.id, level: .info, message: "开始部署 \(template.name)")
+        updateTaskProgress(taskId: task.id, progress: 0.2)
+        
+        // 检查端口可用性
+        addLog(to: task.id, level: .info, message: "正在检查端口可用性...")
         updateTaskProgress(taskId: task.id, progress: 0.25)
+        
+        try await checkPortAvailability(template: template, variables: task.variables, vps: vps)
+        
+        addLog(to: task.id, level: .success, message: "端口检查完成")
+        updateTaskProgress(taskId: task.id, progress: 0.3)
         
         // 替换模板变量
         addLog(to: task.id, level: .info, message: "正在处理模板变量...")
@@ -392,11 +401,13 @@ class DeploymentService: ObservableObject {
         updateTaskProgress(taskId: task.id, progress: 0.35)
         
         do {
-            let outputs = try await executeSmartMultiLineCommands(commands, systemInfo: systemInfo, vps: vps)
-            
-            // 简化执行结果处理，只显示重要输出
-            for (index, output) in outputs.enumerated() {
-                let progress = 0.35 + (Double(index + 1) / Double(outputs.count) * 0.6)
+            // 逐个执行命令
+            for (index, command) in commands.enumerated() {
+                let progress = 0.35 + (Double(index + 1) / Double(commands.count) * 0.6)
+                
+                addLog(to: task.id, level: .info, message: "执行命令 \(index + 1)/\(commands.count): \(command)")
+                
+                let output = try await executeSmartCommand(command, systemInfo: systemInfo, vps: vps)
                 
                 // 只记录有意义的输出结果
                 if !output.isEmpty {
@@ -461,11 +472,13 @@ class DeploymentService: ObservableObject {
         updateTaskProgress(taskId: task.id, progress: 0.25)
         
         do {
-            let outputs = try await executeSmartMultiLineCommands(commands, systemInfo: systemInfo, vps: vps)
-            
-            // 简化执行结果处理，只显示重要输出
-            for (index, output) in outputs.enumerated() {
-                let progress = 0.3 + (Double(index + 1) / Double(outputs.count) * 0.65)
+            // 逐个执行命令
+            for (index, command) in commands.enumerated() {
+                let progress = 0.3 + (Double(index + 1) / Double(commands.count) * 0.65)
+                
+                addLog(to: task.id, level: .info, message: "执行命令 \(index + 1)/\(commands.count): \(command)")
+                
+                let output = try await executeSmartCommand(command, systemInfo: systemInfo, vps: vps)
                 
                 // 只记录有意义的输出结果
                 if !output.isEmpty {
@@ -969,7 +982,7 @@ class DeploymentService: ObservableObject {
             "sudo chmod +x /usr/local/bin/sing-box",
             "sudo tee /etc/sing-box/config.json << 'EOF'\n{\n  \"log\": {\n    \"level\": \"info\"\n  },\n  \"inbounds\": [\n    {\n      \"type\": \"vmess\",\n      \"tag\": \"vmess-in\",\n      \"listen\": \"::\",\n      \"listen_port\": 443,\n      \"users\": [\n        {\n          \"uuid\": \"your_uuid_here\",\n          \"security\": \"auto\"\n        }\n      ]\n    }\n  ]\n}\nEOF",
             "sudo systemctl enable sing-box",
-            "sudo systemctl start sing-box",
+            "sudo systemctl restart sing-box",
             "sudo ufw allow 443/tcp",
             "echo 'SingBox 部署完成'"
         ]
@@ -1805,7 +1818,7 @@ class DeploymentService: ObservableObject {
                 "sudo systemctl daemon-reload",
                 "sudo systemctl unmask sing-box 2>/dev/null || true",
                 "sudo systemctl enable sing-box",
-                "sudo systemctl start sing-box",
+                "sudo systemctl restart sing-box",
                 "sudo systemctl status sing-box --no-pager -l",
                 "echo 'SingBox 服务启动完成，正在检查服务状态...'",
                 "systemctl is-active sing-box",
@@ -2197,34 +2210,7 @@ class DeploymentService: ObservableObject {
         }
     }
     
-    /// 智能多行指令执行 - 支持变量作用域和复杂脚本
-    private func executeSmartMultiLineCommands(_ commands: [String], systemInfo: SystemEnvironmentInfo, vps: VPSInstance) async throws -> [String] {
-        let currentSystemInfo = systemInfo
-        var results: [String] = []
-        var environmentVariables: [String: String] = [:]
-        
-        // 分析指令，识别多行脚本块
-        let processedCommands = processMultiLineCommands(commands)
-        
-        for (_, commandGroup) in processedCommands.enumerated() {
-            
-            do {
-                let result = try await executeCommandGroup(
-                    commandGroup,
-                    systemInfo: currentSystemInfo,
-                    vps: vps,
-                    environmentVariables: &environmentVariables
-                )
-                
-                results.append(result)
-                
-            } catch {
-                throw error
-            }
-        }
-        
-        return results
-    }
+
     
 
     
@@ -2247,213 +2233,7 @@ class DeploymentService: ObservableObject {
         return processedCommand
     }
     
-    /// 处理多行指令，识别脚本块和变量定义
-    private func processMultiLineCommands(_ commands: [String]) -> [CommandGroup] {
-        var commandGroups: [CommandGroup] = []
-        var currentGroup: CommandGroup?
-        var currentScriptLines: [String] = []
-        var inScriptBlock = false
-        
-        for (_, command) in commands.enumerated() {
-            let trimmedCommand = command.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // 跳过空行和注释
-            if trimmedCommand.isEmpty || trimmedCommand.hasPrefix("#") {
-                continue
-            }
-            
-            // 检查是否是脚本块开始
-            if isScriptBlockStart(trimmedCommand) {
-                // 如果有未完成的组，先保存
-                if let group = currentGroup {
-                    commandGroups.append(group)
-                }
-                
-                // 开始新的脚本块
-                inScriptBlock = true
-                currentScriptLines = [trimmedCommand]
-                currentGroup = CommandGroup(type: .script, commands: [], scriptContent: "")
-                
-            } else if inScriptBlock {
-                // 在脚本块中
-                currentScriptLines.append(trimmedCommand)
-                
-                // 检查是否是脚本块结束
-                if isScriptBlockEnd(trimmedCommand) {
-                    inScriptBlock = false
-                    currentGroup?.scriptContent = currentScriptLines.joined(separator: "\n")
-                    if let group = currentGroup {
-                        commandGroups.append(group)
-                    }
-                    currentGroup = nil
-                    currentScriptLines = []
-                }
-                
-            } else {
-                // 普通指令
-                if let group = currentGroup {
-                    commandGroups.append(group)
-                }
-                currentGroup = CommandGroup(type: .single, commands: [trimmedCommand], scriptContent: "")
-            }
-        }
-        
-        // 处理最后一个组
-        if let group = currentGroup {
-            commandGroups.append(group)
-        }
-        
-        return commandGroups
-    }
-    
-    /// 检查是否是脚本块开始
-    private func isScriptBlockStart(_ command: String) -> Bool {
-        let scriptStartPatterns = [
-            "#!/bin/bash",
-            "#!/bin/sh",
-            "#!/usr/bin/env bash",
-            "#!/usr/bin/env sh",
-            "cat << 'EOF'",
-            "cat << EOF",
-            "tee << 'EOF'",
-            "tee << EOF"
-        ]
-        
-        return scriptStartPatterns.contains { command.hasPrefix($0) }
-    }
-    
-    /// 检查是否是脚本块结束
-    private func isScriptBlockEnd(_ command: String) -> Bool {
-        return command == "EOF" || command == "'EOF'"
-    }
-    
-    /// 执行指令组
-    private func executeCommandGroup(
-        _ group: CommandGroup,
-        systemInfo: SystemEnvironmentInfo,
-        vps: VPSInstance,
-        environmentVariables: inout [String: String]
-    ) async throws -> String {
-        
-        switch group.type {
-        case .script:
-            return try await executeScriptBlock(group.scriptContent, systemInfo: systemInfo, vps: vps, environmentVariables: &environmentVariables)
-        case .single:
-            return try await executeSingleCommand(group.commands.first ?? "", systemInfo: systemInfo, vps: vps, environmentVariables: &environmentVariables)
-        }
-    }
-    
-    /// 执行脚本块
-    private func executeScriptBlock(
-        _ scriptContent: String,
-        systemInfo: SystemEnvironmentInfo,
-        vps: VPSInstance,
-        environmentVariables: inout [String: String]
-    ) async throws -> String {
-        
-        addLog(to: currentTask?.id ?? UUID(), level: .info, message: "执行脚本块")
-        
-        // 创建临时脚本文件
-        let scriptFileName = "deploy_script_\(UUID().uuidString).sh"
-        let scriptPath = "/tmp/\(scriptFileName)"
-        
-        // 处理脚本内容，替换环境变量
-        let processedScript = processScriptWithEnvironmentVariables(scriptContent, environmentVariables: environmentVariables)
-        
-        // 上传脚本文件
-        try await vpsManager.writeFile(content: processedScript, to: scriptPath, on: vps)
-        
-        // 设置执行权限
-        let _ = try await vpsManager.executeSSHCommandForService("chmod +x \(scriptPath)", on: vps)
-        
-        // 执行脚本
-        let output = try await vpsManager.executeSSHCommandForService(scriptPath, on: vps)
-        
-        // 清理临时文件
-        let _ = try? await vpsManager.executeSSHCommandForService("rm -f \(scriptPath)", on: vps)
-        
-        // 解析输出中的变量定义
-        parseEnvironmentVariablesFromOutput(output, environmentVariables: &environmentVariables)
-        
-        return output
-    }
-    
-    /// 执行单个指令
-    private func executeSingleCommand(
-        _ command: String,
-        systemInfo: SystemEnvironmentInfo,
-        vps: VPSInstance,
-        environmentVariables: inout [String: String]
-    ) async throws -> String {
-        
-        // 处理指令中的环境变量
-        let processedCommand = processCommandWithEnvironmentVariables(command, environmentVariables: environmentVariables)
-        
-        // 执行指令
-        let output = try await executeSmartCommand(processedCommand, systemInfo: systemInfo, vps: vps)
-        
-        // 解析输出中的变量定义
-        parseEnvironmentVariablesFromOutput(output, environmentVariables: &environmentVariables)
-        
-        return output
-    }
-    
-    /// 处理脚本中的环境变量
-    private func processScriptWithEnvironmentVariables(_ script: String, environmentVariables: [String: String]) -> String {
-        var processedScript = script
-        
-        // 替换环境变量引用
-        for (key, value) in environmentVariables {
-            processedScript = processedScript.replacingOccurrences(of: "$\(key)", with: value)
-            processedScript = processedScript.replacingOccurrences(of: "${\(key)}", with: value)
-        }
-        
-        return processedScript
-    }
-    
-    /// 处理指令中的环境变量
-    private func processCommandWithEnvironmentVariables(_ command: String, environmentVariables: [String: String]) -> String {
-        var processedCommand = command
-        
-        // 替换环境变量引用
-        for (key, value) in environmentVariables {
-            processedCommand = processedCommand.replacingOccurrences(of: "$\(key)", with: value)
-            processedCommand = processedCommand.replacingOccurrences(of: "${\(key)}", with: value)
-        }
-        
-        return processedCommand
-    }
-    
-    /// 从输出中解析环境变量定义
-    private func parseEnvironmentVariablesFromOutput(_ output: String, environmentVariables: inout [String: String]) {
-        let lines = output.components(separatedBy: .newlines)
-        
-        for line in lines {
-            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // 匹配变量定义模式：VAR=value 或 export VAR=value
-            let patterns = [
-                #"^export\s+([A-Za-z_][A-Za-z0-9_]*)=(.*)$"#,
-                #"^([A-Za-z_][A-Za-z0-9_]*)=(.*)$"#
-            ]
-            
-            for pattern in patterns {
-                if let regex = try? NSRegularExpression(pattern: pattern, options: []),
-                   let match = regex.firstMatch(in: trimmedLine, options: [], range: NSRange(trimmedLine.startIndex..., in: trimmedLine)) {
-                    
-                    let varName = String(trimmedLine[Range(match.range(at: 1), in: trimmedLine)!])
-                    let varValue = String(trimmedLine[Range(match.range(at: 2), in: trimmedLine)!])
-                    
-                    // 移除引号
-                    let cleanValue = varValue.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
-                    
-                    environmentVariables[varName] = cleanValue
-                    addLog(to: currentTask?.id ?? UUID(), level: .info, message: "解析到环境变量: \(varName)=\(cleanValue)")
-                    break
-                }
-            }
-        }
-    }
+
     
     /// 生成sudo替代方案
     private func generateSudoAlternative(command: String, systemInfo: SystemEnvironmentInfo) -> String {
@@ -2825,6 +2605,7 @@ enum DeploymentServiceError: LocalizedError {
     case deploymentFailed(String)
     case invalidConfiguration(String)
     case connectionFailed(String)
+    case portConflict(port: Int, message: String)
     
     var errorDescription: String? {
         switch self {
@@ -2844,6 +2625,8 @@ enum DeploymentServiceError: LocalizedError {
             return "配置错误: \(message)"
         case .connectionFailed(let message):
             return "连接失败: \(message)"
+        case .portConflict(_, let message):
+            return "端口冲突: \(message)"
         }
     }
 }
@@ -2876,24 +2659,7 @@ struct SystemEnvironmentInfo {
     }
 }
 
-// MARK: - Command Group
 
-struct CommandGroup {
-    enum GroupType {
-        case single
-        case script
-    }
-    
-    let type: GroupType
-    let commands: [String]
-    var scriptContent: String
-    
-    init(type: GroupType, commands: [String], scriptContent: String) {
-        self.type = type
-        self.commands = commands
-        self.scriptContent = scriptContent
-    }
-}
 
 // MARK: - Package Manager
 
@@ -3480,5 +3246,139 @@ extension DeploymentService {
         
         tlsConfig += "\n        }"
         return tlsConfig
+    }
+    
+    // MARK: - 端口检查功能
+    
+    /// 检查模板中使用的端口是否可用
+    private func checkPortAvailability(template: DeploymentTemplate, variables: [String: String], vps: VPSInstance) async throws {
+        let ports = extractPortsFromTemplate(template: template, variables: variables)
+        
+        if ports.isEmpty {
+            addLog(to: currentTask?.id ?? UUID(), level: .info, message: "未检测到需要检查的端口")
+            return
+        }
+        
+        addLog(to: currentTask?.id ?? UUID(), level: .info, message: "检查端口: \(ports.map(String.init).joined(separator: ", "))")
+        
+        for port in ports {
+            try await checkSinglePort(port: port, vps: vps)
+        }
+    }
+    
+    /// 从模板和变量中提取需要检查的端口
+    private func extractPortsFromTemplate(template: DeploymentTemplate, variables: [String: String]) -> [Int] {
+        var ports: Set<Int> = []
+        
+        // 对于 SingBox 协议，只检查当前选择的协议对应的端口
+        if template.serviceType == .singbox {
+            if let portValue = variables["port"], let port = Int(portValue) {
+                ports.insert(port)
+                addLog(to: currentTask?.id ?? UUID(), level: .info, message: "SingBox 协议端口检查: \(port)")
+            }
+        } else {
+            // 对于其他模板，检查所有端口相关的变量
+            for variable in template.variables {
+                if variable.name.lowercased().contains("port") {
+                    if let value = variables[variable.name], let port = Int(value) {
+                        ports.insert(port)
+                    }
+                }
+            }
+            
+            // 检查配置模板中的端口
+            if !template.configTemplate.isEmpty {
+                let configPorts = extractPortsFromConfig(template.configTemplate, variables: variables)
+                ports.formUnion(configPorts)
+            }
+            
+            // 检查服务模板中的端口
+            if !template.serviceTemplate.isEmpty {
+                let servicePorts = extractPortsFromConfig(template.serviceTemplate, variables: variables)
+                ports.formUnion(servicePorts)
+            }
+        }
+        
+        return Array(ports).sorted()
+    }
+    
+    /// 从配置文本中提取端口
+    private func extractPortsFromConfig(_ config: String, variables: [String: String]) -> Set<Int> {
+        var ports: Set<Int> = []
+        
+        // 替换变量
+        var processedConfig = config
+        for (key, value) in variables {
+            processedConfig = processedConfig.replacingOccurrences(of: "{{\(key)}}", with: value)
+        }
+        
+        // 查找端口模式
+        let patterns = [
+            #""port":\s*(\d+)"#,
+            #"listen_port":\s*(\d+)"#,
+            #"server_port":\s*(\d+)"#,
+            #"host_port":\s*(\d+)"#,
+            #"container_port":\s*(\d+)"#,
+            #"proxy_port":\s*(\d+)"#,
+            #"proxy_container_port":\s*(\d+)"#,
+            #"ports":\s*\[[^\]]*"(\d+):[^"]*"[^\]]*\]"#,
+            #"ports":\s*\[[^\]]*"(\d+)"[^\]]*\]"#
+        ]
+        
+        for pattern in patterns {
+            let regex = try? NSRegularExpression(pattern: pattern, options: [])
+            let range = NSRange(processedConfig.startIndex..<processedConfig.endIndex, in: processedConfig)
+            
+            if let matches = regex?.matches(in: processedConfig, options: [], range: range) {
+                for match in matches {
+                    if match.numberOfRanges > 1 {
+                        let portRange = match.range(at: 1)
+                        if let range = Range(portRange, in: processedConfig) {
+                            let portString = String(processedConfig[range])
+                            if let port = Int(portString) {
+                                ports.insert(port)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return ports
+    }
+    
+    /// 检查单个端口是否可用
+    private func checkSinglePort(port: Int, vps: VPSInstance) async throws {
+        let commands = [
+            "netstat -tlnp | grep :\(port) || echo 'PORT_NOT_FOUND'",
+            "ss -tlnp | grep :\(port) || echo 'PORT_NOT_FOUND'",
+            "lsof -i :\(port) || echo 'PORT_NOT_FOUND'"
+        ]
+        
+        var portInUse = false
+        var errorMessage = ""
+        
+        for command in commands {
+            do {
+                let output = try await executeSmartCommand(command, systemInfo: SystemEnvironmentInfo(osName: "Linux", currentUser: "root", isRoot: true, hasSudo: true, hasSudoPrivileges: true, packageManager: .apt), vps: vps)
+                let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                if !trimmedOutput.isEmpty && trimmedOutput != "PORT_NOT_FOUND" {
+                    portInUse = true
+                    errorMessage = "端口 \(port) 已被占用: \(trimmedOutput)"
+                    break
+                }
+            } catch {
+                // 如果命令执行失败，尝试下一个命令
+                continue
+            }
+        }
+        
+        if portInUse {
+            addLog(to: currentTask?.id ?? UUID(), level: .error, message: errorMessage)
+            throw DeploymentServiceError.portConflict(port: port, message: errorMessage)
+        } else {
+            addLog(to: currentTask?.id ?? UUID(), level: .success, message: "端口 \(port) 可用")
+        }
     }
 }
