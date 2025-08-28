@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // MARK: - Deployment Execution View
 
@@ -12,6 +13,7 @@ struct DeploymentExecutionView: View {
     @State private var isExecuting = false
     @State private var currentTask: DeploymentTask?
     @State private var showingLogs = false
+    @State private var progressCancellable: AnyCancellable?
     
     var body: some View {
         NavigationView {
@@ -43,7 +45,14 @@ struct DeploymentExecutionView: View {
                 }
             }
             .onAppear {
+                // 设置初始状态
+                isExecuting = true
                 startDeployment()
+            }
+            .onDisappear {
+                // 清理进度监听
+                progressCancellable?.cancel()
+                progressCancellable = nil
             }
         }
     }
@@ -57,27 +66,27 @@ struct DeploymentExecutionView: View {
                 .fontWeight(.semibold)
             
             VStack(spacing: 8) {
-                InfoRow(label: "VPS", value: vps.displayName)
-                InfoRow(label: "模板", value: template.name)
-                InfoRow(label: "服务类型", value: template.serviceType.displayName)
+                InfoRow(label: "服务器", value: vps.displayName)
+                InfoRow(label: "服务", value: template.name)
+                InfoRow(label: "类型", value: template.serviceType.displayName)
                 
-                if !variables.isEmpty {
+                // 只显示关键的配置参数
+                if let keyParams = getKeyParameters() {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(.configParameters)
+                        Text("关键配置")
                             .font(.subheadline)
                             .fontWeight(.medium)
                         
-                        ForEach(Array(variables.keys.sorted()), id: \.self) { key in
-                            if let value = variables[key] {
-                                HStack {
-                                    Text(key)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    Text(value)
-                                        .font(.caption)
-                                        .foregroundColor(.primary)
-                                }
+                        ForEach(keyParams, id: \.key) { param in
+                            HStack {
+                                Text(param.label)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text(param.value)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
                             }
                         }
                     }
@@ -90,6 +99,68 @@ struct DeploymentExecutionView: View {
         .cornerRadius(12)
     }
     
+    /// 获取关键的配置参数，过滤掉技术性细节
+    private func getKeyParameters() -> [(key: String, label: String, value: String)]? {
+        var keyParams: [(key: String, label: String, value: String)] = []
+        
+        // 根据服务类型显示不同的关键参数
+        switch template.serviceType {
+        case .singbox:
+            if let protocolType = variables["protocol"] {
+                keyParams.append(("protocol", "协议", protocolType))
+            }
+            if let port = variables["port"] {
+                keyParams.append(("port", "端口", port))
+            }
+            if let uuid = variables["vless_uuid"] ?? variables["vmess_uuid"] ?? variables["trojan_uuid"] {
+                keyParams.append(("uuid", "UUID", String(uuid.prefix(8)) + "..."))
+            }
+            if let password = variables["password"] ?? variables["hysteria_password"] ?? variables["hysteria2_password"] {
+                keyParams.append(("password", "密码", String(password.prefix(8)) + "..."))
+            }
+            
+        case .frp:
+            if let bindPort = variables["bind_port"] {
+                keyParams.append(("bind_port", "绑定端口", bindPort))
+            }
+            if let dashboardPort = variables["dashboard_port"] {
+                keyParams.append(("dashboard_port", "管理端口", dashboardPort))
+            }
+            
+        default:
+            // 通用参数
+            if let port = variables["port"] {
+                keyParams.append(("port", "端口", port))
+            }
+        }
+        
+        return keyParams.isEmpty ? nil : keyParams
+    }
+    
+    /// 获取进度描述
+    private func getProgressDescription(_ progress: Double) -> String {
+        switch progress {
+        case 0.0..<0.1:
+            return "准备中..."
+        case 0.1..<0.2:
+            return "连接服务器..."
+        case 0.2..<0.3:
+            return "检查环境..."
+        case 0.3..<0.4:
+            return "准备配置..."
+        case 0.4..<0.6:
+            return "执行部署..."
+        case 0.6..<0.8:
+            return "安装服务..."
+        case 0.8..<0.9:
+            return "启动服务..."
+        case 0.9..<1.0:
+            return "完成配置..."
+        default:
+            return "部署中..."
+        }
+    }
+    
     // MARK: - Execution Status Section
     
     private var executionStatusSection: some View {
@@ -100,6 +171,12 @@ struct DeploymentExecutionView: View {
             
             if let task = currentTask {
                 VStack(spacing: 12) {
+                    // 调试信息
+                    #if DEBUG
+                    Text("调试: 任务状态 = \(task.status.rawValue), 错误 = \(task.error ?? "无")")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                    #endif
                     HStack {
                         Text(task.status.displayName)
                             .font(.title3)
@@ -111,51 +188,76 @@ struct DeploymentExecutionView: View {
                         if task.status == .running {
                             ProgressView()
                                 .scaleEffect(0.8)
+                        } else if task.status == .pending {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else if task.status == .failed {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.title3)
                         }
+                    }
+                    
+                    // 添加状态描述
+                    if task.status == .pending {
+                        Text("正在初始化部署任务...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    } else if task.status == .failed {
+                        Text("部署失败，请检查配置参数")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
                     }
                     
                     if task.status == .running {
                         ProgressView(value: task.progress)
                             .progressViewStyle(LinearProgressViewStyle())
                         
-                        Text("\(Int(task.progress * 100))%")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        // 显示最新命令结果
-                        if let lastResult = task.lastCommandResult, !lastResult.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(.latestCommandResult)
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.secondary)
-                                
-                                Text(lastResult)
-                                    .font(.caption)
-                                    .foregroundColor(.primary)
-                                    .padding(8)
-                                    .background(Color(.tertiarySystemBackground))
-                                    .cornerRadius(6)
-                                    .lineLimit(3)
-                            }
-                            .padding(.top, 8)
+                        HStack {
+                            Text("\(Int(task.progress * 100))%")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            Text(getProgressDescription(task.progress))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                     }
                     
                     if let error = task.error {
-                                            Text(.error, arguments: error)
-                        .font(.caption)
-                        .foregroundColor(.red)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
                             .padding()
                             .background(Color.red.opacity(0.1))
                             .cornerRadius(8)
                     }
                 }
+            } else if isExecuting && currentTask == nil {
+                VStack(spacing: 8) {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("正在准备部署...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Text("请稍候，正在初始化部署环境")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             } else {
                 HStack {
                     ProgressView()
                         .scaleEffect(0.8)
-                    Text(.preparing)
+                    Text("准备中...")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -177,17 +279,18 @@ struct DeploymentExecutionView: View {
                 
                 Spacer()
                 
-                Button("查看全部") {
+                Button("查看详细日志") {
                     showingLogs = true
                 }
                 .font(.caption)
                 .foregroundColor(.blue)
             }
             
+            // 只显示重要的用户友好的日志
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
-                    ForEach(task.logs.suffix(10)) { log in
-                        LogRowView(log: log)
+                    ForEach(getUserFriendlyLogs(task.logs), id: \.id) { log in
+                        UserFriendlyLogRowView(log: log)
                     }
                 }
             }
@@ -198,6 +301,40 @@ struct DeploymentExecutionView: View {
         .cornerRadius(12)
         .sheet(isPresented: $showingLogs) {
             DeploymentLogsView(task: task)
+        }
+    }
+    
+    /// 获取用户友好的日志，过滤掉技术性细节
+    private func getUserFriendlyLogs(_ logs: [DeploymentLog]) -> [DeploymentLog] {
+        return logs.filter { log in
+            // 只显示重要的用户关心的日志
+            let importantMessages = [
+                "正在连接 SSH",
+                "SSH 连接成功",
+                "正在检测系统环境",
+                "系统检测:",
+                "开始部署",
+                "正在处理模板变量",
+                "准备执行",
+                "开始执行",
+                "指令组",
+                "执行成功",
+                "正在生成服务文件",
+                "服务文件生成完成",
+                "正在启动服务",
+                "服务启动完成",
+                "正在生成配置文件",
+                "配置文件生成完成",
+                "部署完成",
+                "部署失败",
+                "端口检查",
+                "端口可用",
+                "端口已被占用"
+            ]
+            
+            return importantMessages.contains { log.message.contains($0) } ||
+                   log.level == .error ||
+                   log.level == .success
         }
     }
     
@@ -243,6 +380,29 @@ struct DeploymentExecutionView: View {
         }
     }
     
+    // MARK: - Progress Monitoring
+    
+    private func startProgressMonitoring(taskId: UUID) {
+        let progressTimer = Timer.publish(every: 0.3, on: .main, in: .common).autoconnect()
+        
+        progressCancellable = progressTimer.sink { _ in
+            if let updatedTask = deploymentService.deploymentTasks.first(where: { $0.id == taskId }) {
+                let oldStatus = currentTask?.status
+                currentTask = updatedTask
+                
+                // 打印状态变化
+                if oldStatus != updatedTask.status {
+                    print("任务状态变化: \(oldStatus?.rawValue ?? "nil") -> \(updatedTask.status.rawValue)")
+                }
+                
+                // 如果任务状态变为 running，立即更新 UI
+                if updatedTask.status == .running {
+                    print("任务开始执行，进度: \(updatedTask.progress)")
+                }
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func startDeployment() {
@@ -256,24 +416,25 @@ struct DeploymentExecutionView: View {
                 
                 await MainActor.run {
                     currentTask = task
+                    print("任务创建成功，ID: \(task.id), 状态: \(task.status)")
+                    // 立即开始监听任务状态变化
+                    startProgressMonitoring(taskId: task.id)
                 }
                 
-                // 监听任务进度更新
-                let taskId = task.id
-                let progressTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
-                
-                let progressCancellable = progressTimer.sink { _ in
-                    if let updatedTask = deploymentService.deploymentTasks.first(where: { $0.id == taskId }) {
-                        Task { @MainActor in
-                            currentTask = updatedTask
-                        }
-                    }
+                // 检查任务状态，如果是失败状态，不执行部署
+                if task.status == .failed {
+                    print("任务创建失败，状态: \(task.status), 错误: \(task.error ?? "无")")
+                    return
                 }
                 
+                // 开始执行部署
                 try await deploymentService.executeDeployment(task)
                 
                 // 停止进度监听
-                progressCancellable.cancel()
+                await MainActor.run {
+                    progressCancellable?.cancel()
+                    progressCancellable = nil
+                }
                 
                 await MainActor.run {
                     // 更新任务状态
@@ -285,6 +446,28 @@ struct DeploymentExecutionView: View {
                 await MainActor.run {
                     // 处理错误
                     print("部署失败: \(error)")
+                    
+                    // 停止进度监听
+                    progressCancellable?.cancel()
+                    progressCancellable = nil
+                    
+                    // 更新任务状态为失败
+                    if let task = currentTask {
+                        // 尝试从服务中获取更新后的任务
+                        if let updatedTask = deploymentService.deploymentTasks.first(where: { $0.id == task.id }) {
+                            currentTask = updatedTask
+                            print("找到更新后的失败任务，状态: \(updatedTask.status)")
+                        } else {
+                            // 如果任务不在服务中，手动更新当前任务状态
+                            var failedTask = task
+                            failedTask.status = .failed
+                            failedTask.error = error.localizedDescription
+                            currentTask = failedTask
+                            print("手动更新任务状态为失败")
+                        }
+                    } else {
+                        print("当前没有任务，无法更新状态")
+                    }
                 }
             }
         }

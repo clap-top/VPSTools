@@ -124,15 +124,26 @@ class DeploymentService: ObservableObject {
             finalVariables = try await prefillFRPDownloadURL(vps: vps, variables: variables)
         }
         
-        // 验证变量
-        try validateTemplateVariables(template: template, variables: finalVariables)
-        
         // 创建部署任务
         let task = DeploymentTask(
             vpsId: vpsId,
             templateId: templateId,
             variables: finalVariables
         )
+        
+        // 验证变量
+        do {
+            try validateTemplateVariables(template: template, variables: finalVariables)
+        } catch {
+            // 如果验证失败，创建失败状态的任务并返回
+            var failedTask = task
+            failedTask.status = .failed
+            failedTask.error = error.localizedDescription
+            deploymentTasks.append(failedTask)
+            saveDeploymentTasks()
+            print("DeploymentService: 创建失败任务，ID: \(failedTask.id), 错误: \(error.localizedDescription)")
+            return failedTask
+        }
         
         deploymentTasks.append(task)
         saveDeploymentTasks()
@@ -163,6 +174,8 @@ class DeploymentService: ObservableObject {
         deploymentTasks[index].progress = 0.0
         currentTask = deploymentTasks[index]
         saveDeploymentTasks()
+        
+        print("DeploymentService: 任务状态已更新为 running, ID: \(task.id)")
         
         do {
             // 连接 SSH
@@ -369,9 +382,18 @@ class DeploymentService: ObservableObject {
         addLog(to: task.id, level: .info, message: "开始部署 \(template.name)")
         updateTaskProgress(taskId: task.id, progress: 0.25)
         
+        // 检查监听端口
+        addLog(to: task.id, level: .info, message: "正在检查监听端口...")
+        updateTaskProgress(taskId: task.id, progress: 0.27)
+        
+        try await checkListeningPorts(task: task, template: template, vps: vps)
+        
+        addLog(to: task.id, level: .success, message: "端口检查完成")
+        updateTaskProgress(taskId: task.id, progress: 0.3)
+        
         // 替换模板变量
         addLog(to: task.id, level: .info, message: "正在处理模板变量...")
-        updateTaskProgress(taskId: task.id, progress: 0.3)
+        updateTaskProgress(taskId: task.id, progress: 0.32)
         
         let commands = template.commands.map { command in
             replaceTemplateVariables(command: command, variables: task.variables)
@@ -1285,10 +1307,6 @@ class DeploymentService: ObservableObject {
         let transportUseBrowserForwarding = variables["vless_transport_use_browser_forwarding"] ?? "false"
         let multiplexEnabled = variables["vless_multiplex_enabled"] ?? "false"
         let multiplexPadding = variables["vless_multiplex_padding"] ?? "false"
-        let multiplexProtocol = variables["vless_multiplex_protocol"] ?? "h2mux"
-        let multiplexMaxConnections = variables["vless_multiplex_max_connections"] ?? "4"
-        let multiplexMinStreams = variables["vless_multiplex_min_streams"] ?? "4"
-        let multiplexMaxStreams = variables["vless_multiplex_max_streams"] ?? "0"
         let multiplexBrutalEnabled = variables["vless_multiplex_brutal_enabled"] ?? "false"
         let multiplexBrutalUpMbps = variables["vless_multiplex_brutal_up_mbps"] ?? "10000"
         let multiplexBrutalDownMbps = variables["vless_multiplex_brutal_down_mbps"] ?? "10000"
@@ -1432,37 +1450,6 @@ class DeploymentService: ObservableObject {
                 config += """
                 ,
                 "padding": true
-                """
-            }
-            
-            // 添加协议配置（如果不是默认的 h2mux）
-            if multiplexProtocol != "h2mux" {
-                config += """
-                ,
-                "protocol": "\(multiplexProtocol)"
-                """
-            }
-            
-            // 添加连接数配置（如果设置了 max_connections）
-            if let maxConnections = Int(multiplexMaxConnections), maxConnections > 0 {
-                config += """
-                ,
-                "max_connections": \(maxConnections)
-                """
-            }
-            
-            // 添加流数配置（如果设置了 min_streams 或 max_streams）
-            if let minStreams = Int(multiplexMinStreams), minStreams > 0 {
-                config += """
-                ,
-                "min_streams": \(minStreams)
-                """
-            }
-            
-            if let maxStreams = Int(multiplexMaxStreams), maxStreams > 0 {
-                config += """
-                ,
-                "max_streams": \(maxStreams)
                 """
             }
             
@@ -2493,6 +2480,7 @@ enum DeploymentServiceError: LocalizedError {
     case deploymentFailed(String)
     case invalidConfiguration(String)
     case connectionFailed(String)
+    case portInUse(Int)
     
     var errorDescription: String? {
         switch self {
@@ -2512,6 +2500,8 @@ enum DeploymentServiceError: LocalizedError {
             return "配置错误: \(message)"
         case .connectionFailed(let message):
             return "连接失败: \(message)"
+        case .portInUse(let port):
+            return "端口 \(port) 已被占用，请选择其他端口或停止占用该端口的服务"
         }
     }
 }
@@ -3148,5 +3138,97 @@ extension DeploymentService {
         
         tlsConfig += "\n        }"
         return tlsConfig
+    }
+    
+    /// 检查监听端口
+    private func checkListeningPorts(task: DeploymentTask, template: DeploymentTemplate, vps: VPSInstance) async throws {
+        // 获取需要检查的端口
+        let portsToCheck = extractPortsFromVariables(task.variables, template: template)
+        
+        if portsToCheck.isEmpty {
+            addLog(to: task.id, level: .info, message: "未找到需要检查的端口")
+            return
+        }
+        
+        addLog(to: task.id, level: .info, message: "检查端口: \(portsToCheck.map(String.init).joined(separator: ", "))")
+        
+        // 检查每个端口
+        for port in portsToCheck {
+            let isPortInUse = try await checkPortInUse(port: port, vps: vps)
+            
+            if isPortInUse {
+                let errorMessage = "端口 \(port) 已被占用，请选择其他端口或停止占用该端口的服务"
+                addLog(to: task.id, level: .error, message: errorMessage)
+                throw DeploymentServiceError.portInUse(port)
+            } else {
+                addLog(to: task.id, level: .success, message: "端口 \(port) 可用")
+            }
+        }
+    }
+    
+    /// 从变量中提取需要检查的端口
+    private func extractPortsFromVariables(_ variables: [String: String], template: DeploymentTemplate) -> [Int] {
+        var ports: Set<Int> = []
+        
+        // 检查常见的端口变量
+        let portVariables = ["port", "listen_port", "server_port", "bind_port", "dashboard_port"]
+        
+        for portVar in portVariables {
+            if let portString = variables[portVar], let port = Int(portString) {
+                ports.insert(port)
+            }
+        }
+        
+        // 对于 Sing-Box 模板，检查协议特定的端口
+        if template.serviceType == .singbox {
+            if let portString = variables["port"], let port = Int(portString) {
+                ports.insert(port)
+            }
+        }
+        
+        // 对于 FRP 模板，检查服务端和客户端端口
+        if template.serviceType == .frp {
+            if let bindPortString = variables["bind_port"], let bindPort = Int(bindPortString) {
+                ports.insert(bindPort)
+            }
+            if let dashboardPortString = variables["dashboard_port"], let dashboardPort = Int(dashboardPortString) {
+                ports.insert(dashboardPort)
+            }
+        }
+        
+        return Array(ports).sorted()
+    }
+    
+    /// 检查端口是否被占用
+    private func checkPortInUse(port: Int, vps: VPSInstance) async throws -> Bool {
+        // 使用 netstat 检查端口占用情况
+        let command = "netstat -tlnp 2>/dev/null | grep ':$port ' || ss -tlnp 2>/dev/null | grep ':$port ' || lsof -i :$port 2>/dev/null"
+        
+        do {
+            let output = try await vpsManager.executeSSHCommandForService(command, on: vps)
+            
+            // 如果输出不为空，说明端口被占用
+            if !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                addLog(to: currentTask?.id ?? UUID(), level: .warning, message: "端口 \(port) 占用详情: \(output.trimmingCharacters(in: .whitespacesAndNewlines))")
+                return true
+            }
+            
+            return false
+        } catch {
+            // 如果命令执行失败，尝试使用更简单的方法
+            addLog(to: currentTask?.id ?? UUID(), level: .warning, message: "端口检查命令执行失败，尝试备用方法")
+            
+            // 备用方法：尝试绑定端口来检查
+            let testCommand = "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/$port' 2>/dev/null && echo 'PORT_IN_USE' || echo 'PORT_AVAILABLE'"
+            
+            do {
+                let testOutput = try await vpsManager.executeSSHCommandForService(testCommand, on: vps)
+                return testOutput.contains("PORT_IN_USE")
+            } catch {
+                // 如果备用方法也失败，记录警告但继续部署
+                addLog(to: currentTask?.id ?? UUID(), level: .warning, message: "端口检查失败，将跳过端口检查: \(error.localizedDescription)")
+                return false
+            }
+        }
     }
 }

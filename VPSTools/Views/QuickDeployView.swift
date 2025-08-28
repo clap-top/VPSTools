@@ -1024,7 +1024,14 @@ struct TemplateDetailView: View {
                             variable: variable,
                             value: Binding(
                                 get: { variables[variable.name] ?? variable.defaultValue ?? "" },
-                                set: { variables[variable.name] = $0 }
+                                set: { 
+                                    let oldProtocol = variables["protocol"]
+                                    variables[variable.name] = $0
+                                    // 当协议改变时，更新默认参数
+                                    if oldProtocol != $0 {
+                                        updateProtocolDefaults(newProtocol: $0)
+                                    }
+                                }
                             )
                         )
                     } else if template.serviceType == .singbox && shouldShowVariable(variable) {
@@ -1239,8 +1246,8 @@ struct TemplateDetailView: View {
             }
             let multiplexEnabled = variables["vless_multiplex_enabled"] ?? "false"
             if multiplexEnabled == "true" {
-                // 基础多路复用参数
-                let basicMultiplexParams = ["vless_multiplex_padding", "vless_multiplex_protocol", "vless_multiplex_max_connections", "vless_multiplex_min_streams", "vless_multiplex_max_streams"]
+                // 基础多路复用参数 (inbound 只支持 enabled, padding, brutal)
+                let basicMultiplexParams = ["vless_multiplex_padding"]
                 if basicMultiplexParams.contains(variable.name) {
                     return true
                 }
@@ -1367,8 +1374,201 @@ struct TemplateDetailView: View {
     // MARK: - Private Methods
     
     private func initializeVariables() {
+        // 初始化模板默认值
         for variable in template.variables {
             variables[variable.name] = variable.defaultValue
+        }
+        
+        // 如果是 Sing-Box 模板，添加协议特定的默认参数
+        if template.serviceType == .singbox {
+            addProtocolSpecificDefaults()
+        }
+    }
+    
+    private func addProtocolSpecificDefaults() {
+        guard let selectedProtocol = variables["protocol"] else { return }
+        
+        // 为不同协议添加默认参数
+        switch selectedProtocol {
+        case "shadowsocks":
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
+            }
+            if variables["method"]?.isEmpty ?? true {
+                variables["method"] = "aes-256-gcm"
+            }
+            
+        case "vmess":
+            if variables["vmess_uuid"]?.isEmpty ?? true {
+                variables["vmess_uuid"] = UUID().uuidString
+            }
+            if variables["vmess_alter_id"]?.isEmpty ?? true {
+                variables["vmess_alter_id"] = "0"
+            }
+            
+        case "trojan":
+            if variables["trojan_uuid"]?.isEmpty ?? true {
+                variables["trojan_uuid"] = generateRandomPassword(length: 32)
+            }
+            
+        case "vless":
+            if variables["vless_uuid"]?.isEmpty ?? true {
+                variables["vless_uuid"] = UUID().uuidString
+            }
+            if variables["vless_flow"]?.isEmpty ?? true {
+                variables["vless_flow"] = "xtls-rprx-vision"
+            }
+            if variables["vless_transport_type"]?.isEmpty ?? true {
+                variables["vless_transport_type"] = "tcp"
+            }
+            if variables["vless_transport_path"]?.isEmpty ?? true {
+                variables["vless_transport_path"] = "/"
+            }
+            
+        case "hysteria":
+            if variables["hysteria_password"]?.isEmpty ?? true {
+                variables["hysteria_password"] = generateRandomPassword(length: 16)
+            }
+            if variables["hysteria_up_mbps"]?.isEmpty ?? true {
+                variables["hysteria_up_mbps"] = "100"
+            }
+            if variables["hysteria_down_mbps"]?.isEmpty ?? true {
+                variables["hysteria_down_mbps"] = "100"
+            }
+            
+        case "hysteria2":
+            if variables["hysteria2_password"]?.isEmpty ?? true {
+                variables["hysteria2_password"] = generateRandomPassword(length: 16)
+            }
+            
+        case "tuic":
+            if variables["tuic_uuid"]?.isEmpty ?? true {
+                variables["tuic_uuid"] = UUID().uuidString
+            }
+            if variables["tuic_password"]?.isEmpty ?? true {
+                variables["tuic_password"] = generateRandomPassword(length: 16)
+            }
+            if variables["tuic_congestion_control"]?.isEmpty ?? true {
+                variables["tuic_congestion_control"] = "bbr"
+            }
+            if variables["tuic_udp_relay_mode"]?.isEmpty ?? true {
+                variables["tuic_udp_relay_mode"] = "native"
+            }
+            if variables["tuic_max_datagram_size"]?.isEmpty ?? true {
+                variables["tuic_max_datagram_size"] = "1400"
+            }
+            
+        case "naive":
+            if variables["naive_username"]?.isEmpty ?? true {
+                variables["naive_username"] = "admin"
+            }
+            if variables["naive_password"]?.isEmpty ?? true {
+                variables["naive_password"] = generateRandomPassword(length: 16)
+            }
+            
+        case "shadowtls":
+            if variables["shadowtls_password"]?.isEmpty ?? true {
+                variables["shadowtls_password"] = generateRandomPassword(length: 16)
+            }
+            if variables["shadowtls_server"]?.isEmpty ?? true {
+                variables["shadowtls_server"] = "www.microsoft.com"
+            }
+            
+        case "anytls":
+            if variables["anytls_uuid"]?.isEmpty ?? true {
+                variables["anytls_uuid"] = UUID().uuidString
+            }
+            if variables["anytls_server"]?.isEmpty ?? true {
+                variables["anytls_server"] = "www.microsoft.com"
+            }
+            
+        case "socks":
+            if variables["socks_username"]?.isEmpty ?? true {
+                variables["socks_username"] = "admin"
+            }
+            if variables["socks_password"]?.isEmpty ?? true {
+                variables["socks_password"] = generateRandomPassword(length: 16)
+            }
+            
+        case "http":
+            if variables["http_username"]?.isEmpty ?? true {
+                variables["http_username"] = "admin"
+            }
+            if variables["http_password"]?.isEmpty ?? true {
+                variables["http_password"] = generateRandomPassword(length: 16)
+            }
+            
+        default:
+            break
+        }
+        
+        // 通用默认参数
+        if variables["port"]?.isEmpty ?? true {
+            variables["port"] = "443"
+        }
+        if variables["log_level"]?.isEmpty ?? true {
+            variables["log_level"] = "info"
+        }
+        
+        // TLS 相关默认参数
+        let tlsSupportedProtocols = ["vmess", "trojan", "vless", "hysteria", "shadowtls", "tuic", "hysteria2", "anytls"]
+        if tlsSupportedProtocols.contains(selectedProtocol) {
+            if variables["tls_enabled"]?.isEmpty ?? true {
+                variables["tls_enabled"] = "true"
+            }
+            if variables["tls_server_name"]?.isEmpty ?? true {
+                variables["tls_server_name"] = "www.microsoft.com"
+            }
+            if variables["tls_alpn"]?.isEmpty ?? true {
+                variables["tls_alpn"] = "h2,http/1.1"
+            }
+            if variables["tls_min_version"]?.isEmpty ?? true {
+                variables["tls_min_version"] = "1.2"
+            }
+            if variables["tls_max_version"]?.isEmpty ?? true {
+                variables["tls_max_version"] = "1.3"
+            }
+        }
+    }
+    
+    private func generateRandomPassword(length: Int) -> String {
+        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return String((0..<length).map { _ in characters.randomElement()! })
+    }
+    
+    private func updateProtocolDefaults(newProtocol: String) {
+        // 清除之前协议的特定参数
+        clearProtocolSpecificVariables()
+        
+        // 为新协议设置默认参数
+        variables["protocol"] = newProtocol
+        addProtocolSpecificDefaults()
+    }
+    
+    private func clearProtocolSpecificVariables() {
+        // 清除所有协议特定的变量，保留通用变量
+        let protocolSpecificKeys = [
+            "vmess_uuid", "vmess_alter_id",
+            "trojan_uuid",
+            "vless_uuid", "vless_flow", "vless_transport_type", "vless_transport_path",
+            "vless_transport_host", "vless_transport_headers", "vless_transport_service_name",
+            "vless_transport_idle_timeout", "vless_transport_ping_timeout", "vless_transport_permit_without_stream",
+            "vless_transport_max_early_data", "vless_transport_use_browser_forwarding",
+            "vless_multiplex_enabled", "vless_multiplex_padding", "vless_multiplex_brutal_enabled",
+            "vless_multiplex_brutal_up_mbps", "vless_multiplex_brutal_down_mbps",
+            "hysteria_password", "hysteria_up_mbps", "hysteria_down_mbps",
+            "hysteria2_password",
+            "tuic_uuid", "tuic_password", "tuic_congestion_control", "tuic_udp_relay_mode", "tuic_max_datagram_size",
+            "naive_username", "naive_password",
+            "shadowtls_password", "shadowtls_server",
+            "anytls_uuid", "anytls_server",
+            "socks_username", "socks_password",
+            "http_username", "http_password",
+            "password", "method"
+        ]
+        
+        for key in protocolSpecificKeys {
+            variables.removeValue(forKey: key)
         }
     }
 }
