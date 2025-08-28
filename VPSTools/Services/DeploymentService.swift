@@ -412,14 +412,12 @@ class DeploymentService: ObservableObject {
             // 处理执行结果
             for (index, output) in outputs.enumerated() {
                 if !output.isEmpty {
-                    addLog(to: task.id, level: .success, message: "指令组 \(index + 1) 执行成功")
                     addLog(to: task.id, level: .info, message: "返回结果: \(output.trimmingCharacters(in: .whitespacesAndNewlines))")
                     
                     // 更新进度并显示结果
                     let progress = 0.35 + (Double(index + 1) / Double(outputs.count) * 0.6)
                     updateTaskProgressWithResult(taskId: task.id, progress: progress, result: output.trimmingCharacters(in: .whitespacesAndNewlines))
                 } else {
-                    addLog(to: task.id, level: .success, message: "指令组 \(index + 1) 执行成功 (无输出)")
                     
                     // 更新进度
                     let progress = 0.35 + (Double(index + 1) / Double(outputs.count) * 0.6)
@@ -1053,9 +1051,218 @@ class DeploymentService: ObservableObject {
     }
     
     private func validateTemplateVariables(template: DeploymentTemplate, variables: [String: String]) throws {
-        for variable in template.variables where variable.required {
-            guard let value = variables[variable.name], !value.isEmpty else {
-                throw DeploymentServiceError.missingRequiredVariable(variable.name)
+        // 对于 sing-box 模板，使用协议特定的验证逻辑
+        if template.serviceType == .singbox {
+            try validateSingBoxTemplateVariables(template: template, variables: variables)
+        } else {
+            // 对于其他模板，使用通用验证逻辑
+            for variable in template.variables where variable.required {
+                guard let value = variables[variable.name], !value.isEmpty else {
+                    throw DeploymentServiceError.missingRequiredVariable(variable.name)
+                }
+            }
+        }
+    }
+    
+    /// 验证 sing-box 模板变量，根据协议类型进行特定验证
+    private func validateSingBoxTemplateVariables(template: DeploymentTemplate, variables: [String: String]) throws {
+        guard let protocolType = variables["protocol"] else {
+            throw DeploymentServiceError.missingRequiredVariable("protocol")
+        }
+        
+        // 通用必需参数
+        let commonRequiredParams = ["port"]
+        
+        // 协议特定的必需参数
+        let protocolRequiredParams: [String: [String]] = [
+            "direct": [],
+            "mixed": [],
+            "socks": [],
+            "http": [],
+            "shadowsocks": ["password", "method"],
+            "vmess": ["vmess_uuid"],
+            "trojan": ["trojan_uuid"],
+            "naive": ["naive_username", "naive_password"],
+            "hysteria": ["hysteria_password"],
+            "hysteria2": ["hysteria2_password"],
+            "shadowtls": ["shadowtls_password", "shadowtls_server"],
+            "tuic": ["tuic_uuid", "tuic_password"],
+            "vless": ["vless_uuid"],
+            "anytls": ["anytls_uuid", "anytls_server"],
+            "tun": [],
+            "redirect": ["redirect_to"],
+            "tproxy": []
+        ]
+        
+        // 获取当前协议的必需参数
+        let requiredParams = commonRequiredParams + (protocolRequiredParams[protocolType] ?? [])
+        
+        // 验证必需参数
+        for param in requiredParams {
+            guard let value = variables[param], !value.isEmpty else {
+                throw DeploymentServiceError.missingRequiredVariable(param)
+            }
+        }
+        
+        // 协议特定的条件验证
+        try validateProtocolSpecificConditions(protocolType: protocolType, variables: variables)
+    }
+    
+    /// 验证协议特定的条件
+    private func validateProtocolSpecificConditions(protocolType: String, variables: [String: String]) throws {
+        switch protocolType {
+        case "vless":
+            // VLESS 协议的特殊验证
+            try validateVLESSConditions(variables: variables)
+        case "vmess":
+            // VMess 协议的特殊验证
+            try validateVMessConditions(variables: variables)
+        case "trojan":
+            // Trojan 协议的特殊验证
+            try validateTrojanConditions(variables: variables)
+        case "hysteria", "hysteria2":
+            // Hysteria 协议的特殊验证
+            try validateHysteriaConditions(variables: variables)
+        case "tuic":
+            // TUIC 协议的特殊验证
+            try validateTUICConditions(variables: variables)
+        case "shadowtls":
+            // ShadowTLS 协议的特殊验证
+            try validateShadowTLSConditions(variables: variables)
+        case "anytls":
+            // AnyTLS 协议的特殊验证
+            try validateAnyTLSConditions(variables: variables)
+        default:
+            break
+        }
+    }
+    
+    /// 验证 VLESS 协议特定条件
+    private func validateVLESSConditions(variables: [String: String]) throws {
+        // 如果启用了 TLS，验证 TLS 相关参数
+        if let tlsEnabled = variables["tls_enabled"], tlsEnabled == "true" {
+            try validateTLSConditions(variables: variables, protocolType: "vless")
+        }
+        
+        // 如果启用了多路复用，验证多路复用相关参数
+        if let multiplexEnabled = variables["vless_multiplex_enabled"], multiplexEnabled == "true" {
+            // 多路复用没有额外的必需参数，但可以验证可选参数
+        }
+        
+        // 如果启用了 Brutal，验证 Brutal 相关参数
+        if let brutalEnabled = variables["vless_multiplex_brutal_enabled"], brutalEnabled == "true" {
+            let brutalParams = ["vless_multiplex_brutal_up_mbps", "vless_multiplex_brutal_down_mbps"]
+            for param in brutalParams {
+                if let value = variables[param], value.isEmpty {
+                    throw DeploymentServiceError.missingRequiredVariable(param)
+                }
+            }
+        }
+    }
+    
+    /// 验证 VMess 协议特定条件
+    private func validateVMessConditions(variables: [String: String]) throws {
+        // 如果启用了 TLS，验证 TLS 相关参数
+        if let tlsEnabled = variables["tls_enabled"], tlsEnabled == "true" {
+            try validateTLSConditions(variables: variables, protocolType: "vmess")
+        }
+    }
+    
+    /// 验证 Trojan 协议特定条件
+    private func validateTrojanConditions(variables: [String: String]) throws {
+        // Trojan 协议需要 TLS
+        try validateTLSConditions(variables: variables, protocolType: "trojan")
+    }
+    
+    /// 验证 Hysteria 协议特定条件
+    private func validateHysteriaConditions(variables: [String: String]) throws {
+        // Hysteria 协议需要 TLS
+        try validateTLSConditions(variables: variables, protocolType: "hysteria")
+        
+        // 验证带宽参数
+        let bandwidthParams = ["hysteria_up_mbps", "hysteria_down_mbps"]
+        for param in bandwidthParams {
+            if let value = variables[param], value.isEmpty {
+                throw DeploymentServiceError.missingRequiredVariable(param)
+            }
+        }
+    }
+    
+    /// 验证 TUIC 协议特定条件
+    private func validateTUICConditions(variables: [String: String]) throws {
+        // TUIC 协议需要 TLS
+        try validateTLSConditions(variables: variables, protocolType: "tuic")
+        
+        // 验证 TUIC 特定参数
+        let tuicParams = ["tuic_congestion_control", "tuic_udp_relay_mode", "tuic_max_datagram_size"]
+        for param in tuicParams {
+            if let value = variables[param], value.isEmpty {
+                throw DeploymentServiceError.missingRequiredVariable(param)
+            }
+        }
+    }
+    
+    /// 验证 ShadowTLS 协议特定条件
+    private func validateShadowTLSConditions(variables: [String: String]) throws {
+        // ShadowTLS 协议需要 TLS
+        try validateTLSConditions(variables: variables, protocolType: "shadowtls")
+    }
+    
+    /// 验证 AnyTLS 协议特定条件
+    private func validateAnyTLSConditions(variables: [String: String]) throws {
+        // AnyTLS 协议需要 TLS
+        try validateTLSConditions(variables: variables, protocolType: "anytls")
+    }
+    
+    /// 验证 TLS 相关条件
+    private func validateTLSConditions(variables: [String: String], protocolType: String) throws {
+        // 基础 TLS 参数
+        let tlsParams = ["tls_server_name"]
+        for param in tlsParams {
+            if let value = variables[param], value.isEmpty {
+                throw DeploymentServiceError.missingRequiredVariable(param)
+            }
+        }
+        
+        // 如果启用了 ACME，验证 ACME 参数
+        if let acmeEnabled = variables["tls_acme_enabled"], acmeEnabled == "true" {
+            let acmeParams = ["tls_acme_domain", "tls_acme_email"]
+            for param in acmeParams {
+                if let value = variables[param], value.isEmpty {
+                    throw DeploymentServiceError.missingRequiredVariable(param)
+                }
+            }
+        }
+        
+        // 如果启用了 Reality，验证 Reality 参数
+        if let realityEnabled = variables["tls_reality_enabled"], realityEnabled == "true" {
+            let realityParams = ["tls_reality_private_key", "tls_reality_handshake_server"]
+            for param in realityParams {
+                if let value = variables[param], value.isEmpty {
+                    throw DeploymentServiceError.missingRequiredVariable(param)
+                }
+            }
+        }
+        
+        // 如果启用了 ECH，验证 ECH 参数
+        if let echEnabled = variables["tls_ech_enabled"], echEnabled == "true" {
+            if protocolType == "vless" {
+                let echParams = ["tls_ech_key_path"]
+                for param in echParams {
+                    if let value = variables[param], value.isEmpty {
+                        throw DeploymentServiceError.missingRequiredVariable(param)
+                    }
+                }
+            }
+        }
+        
+        // 如果启用了 uTLS，验证 uTLS 参数
+        if let utlsEnabled = variables["tls_utls_enabled"], utlsEnabled == "true" {
+            let utlsParams = ["tls_utls_fingerprint"]
+            for param in utlsParams {
+                if let value = variables[param], value.isEmpty {
+                    throw DeploymentServiceError.missingRequiredVariable(param)
+                }
             }
         }
     }
