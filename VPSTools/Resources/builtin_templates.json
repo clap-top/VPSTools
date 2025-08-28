@@ -400,42 +400,7 @@
           "required": false,
           "options": null
         },
-        {
-          "id": "1b2c3d4e-5f6a-3456-0000-7890123451b3",
-          "name": "vless_multiplex_protocol",
-          "description": "多路复用协议 (仅 VLESS 使用)",
-          "type": "select",
-          "defaultValue": "h2mux",
-          "required": false,
-          "options": ["smux", "yamux", "h2mux"]
-        },
-        {
-          "id": "2c3d4e5f-6a7b-3456-0000-7890123452c4",
-          "name": "vless_multiplex_max_connections",
-          "description": "最大连接数 (仅 VLESS 使用)",
-          "type": "number",
-          "defaultValue": "4",
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "3d4e5f6a-7b8c-3456-0000-7890123453d5",
-          "name": "vless_multiplex_min_streams",
-          "description": "最小流数 (仅 VLESS 使用)",
-          "type": "number",
-          "defaultValue": "4",
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "4e5f6a7b-8c9d-3456-0000-7890123454e6",
-          "name": "vless_multiplex_max_streams",
-          "description": "最大流数 (仅 VLESS 使用)",
-          "type": "number",
-          "defaultValue": "0",
-          "required": false,
-          "options": null
-        },
+
         {
           "id": "2a3a4a5a-3b3c-3456-0000-7890123452a3",
           "name": "tls_enabled",
