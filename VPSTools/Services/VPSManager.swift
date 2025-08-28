@@ -161,7 +161,7 @@ class VPSManager: ObservableObject {
         
         // 检查是否在短时间内已经测试过
         if let lastTest = connectionTestResults[vps.id]?.timestamp,
-           Date().timeIntervalSince(lastTest) < 30 { // 减少到30秒内不重复测试
+           Date().timeIntervalSince(lastTest) < 300 { // 减少到30秒内不重复测试
             return connectionTestResults[vps.id] ?? ConnectionTestResult(pingSuccess: false, sshSuccess: false)
         }
         
@@ -245,7 +245,7 @@ class VPSManager: ObservableObject {
     func startMonitoring(for vps: VPSInstance) {
         guard monitoringTimers[vps.id] == nil else { return }
         
-        let timer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: 300.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.updateMonitoringData(for: vps)
             }

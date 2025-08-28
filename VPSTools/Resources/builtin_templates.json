@@ -123,6 +123,8 @@
       "serviceType": "sing-box",
       "category": "网络服务",
       "commands": [
+        "apt update",
+        "apt install -y apt-transport-https ca-certificates curl lsof wget tar",
         "mkdir -p /tmp/singbox_install",
         "cd /tmp/singbox_install && curl -L -o sing-box.tar.gz \"{{download_url}}\"",
         "cd /tmp/singbox_install && tar -xzf sing-box.tar.gz",

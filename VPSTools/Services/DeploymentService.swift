@@ -175,8 +175,6 @@ class DeploymentService: ObservableObject {
         currentTask = deploymentTasks[index]
         saveDeploymentTasks()
         
-        print("DeploymentService: 任务状态已更新为 running, ID: \(task.id)")
-        
         do {
             // 连接 SSH
             addLog(to: task.id, level: .info, message: "正在连接 SSH...")
@@ -382,50 +380,40 @@ class DeploymentService: ObservableObject {
         addLog(to: task.id, level: .info, message: "开始部署 \(template.name)")
         updateTaskProgress(taskId: task.id, progress: 0.25)
         
-        // 检查监听端口
-        addLog(to: task.id, level: .info, message: "正在检查监听端口...")
-        updateTaskProgress(taskId: task.id, progress: 0.27)
-        
-        try await checkListeningPorts(task: task, template: template, vps: vps)
-        
-        addLog(to: task.id, level: .success, message: "端口检查完成")
-        updateTaskProgress(taskId: task.id, progress: 0.3)
-        
         // 替换模板变量
         addLog(to: task.id, level: .info, message: "正在处理模板变量...")
-        updateTaskProgress(taskId: task.id, progress: 0.32)
+        updateTaskProgress(taskId: task.id, progress: 0.3)
         
         let commands = template.commands.map { command in
             replaceTemplateVariables(command: command, variables: task.variables)
         }
         
-        addLog(to: task.id, level: .info, message: "准备执行 \(commands.count) 个命令")
-        updateTaskProgress(taskId: task.id, progress: 0.35)
-        
-        // 执行命令 - 使用智能多行指令执行系统
-        addLog(to: task.id, level: .info, message: "开始执行 \(commands.count) 个指令")
+        addLog(to: task.id, level: .info, message: "开始执行部署命令")
         updateTaskProgress(taskId: task.id, progress: 0.35)
         
         do {
             let outputs = try await executeSmartMultiLineCommands(commands, systemInfo: systemInfo, vps: vps)
             
-            // 处理执行结果
+            // 简化执行结果处理，只显示重要输出
             for (index, output) in outputs.enumerated() {
+                let progress = 0.35 + (Double(index + 1) / Double(outputs.count) * 0.6)
+                
+                // 只记录有意义的输出结果
                 if !output.isEmpty {
-                    addLog(to: task.id, level: .info, message: "返回结果: \(output.trimmingCharacters(in: .whitespacesAndNewlines))")
-                    
-                    // 更新进度并显示结果
-                    let progress = 0.35 + (Double(index + 1) / Double(outputs.count) * 0.6)
-                    updateTaskProgressWithResult(taskId: task.id, progress: progress, result: output.trimmingCharacters(in: .whitespacesAndNewlines))
+                    let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+                    // 过滤掉常见的无意义输出
+                    if !isMeaninglessOutput(trimmedOutput) {
+                        addLog(to: task.id, level: .info, message: trimmedOutput)
+                    }
+                    updateTaskProgressWithResult(taskId: task.id, progress: progress, result: trimmedOutput)
                 } else {
-                    
-                    // 更新进度
-                    let progress = 0.35 + (Double(index + 1) / Double(outputs.count) * 0.6)
                     updateTaskProgress(taskId: task.id, progress: progress)
                 }
             }
+            
+            addLog(to: task.id, level: .success, message: "部署命令执行完成")
         } catch {
-            addLog(to: task.id, level: .error, message: "指令执行失败: \(error.localizedDescription)")
+            addLog(to: task.id, level: .error, message: "部署执行失败: \(error.localizedDescription)")
             throw error
         }
         
@@ -472,30 +460,27 @@ class DeploymentService: ObservableObject {
         addLog(to: task.id, level: .info, message: "开始执行自定义部署")
         updateTaskProgress(taskId: task.id, progress: 0.25)
         
-        addLog(to: task.id, level: .info, message: "准备执行 \(commands.count) 个自定义命令")
-        updateTaskProgress(taskId: task.id, progress: 0.3)
-        
-        // 执行命令 - 使用智能多行指令执行系统
         do {
             let outputs = try await executeSmartMultiLineCommands(commands, systemInfo: systemInfo, vps: vps)
             
-            // 处理执行结果
+            // 简化执行结果处理，只显示重要输出
             for (index, output) in outputs.enumerated() {
                 let progress = 0.3 + (Double(index + 1) / Double(outputs.count) * 0.65)
                 
+                // 只记录有意义的输出结果
                 if !output.isEmpty {
-                    addLog(to: task.id, level: .success, message: "指令组 \(index + 1) 执行成功")
-                    addLog(to: task.id, level: .info, message: "返回结果: \(output.trimmingCharacters(in: .whitespacesAndNewlines))")
-                    
-                    // 更新进度并显示结果
-                    updateTaskProgressWithResult(taskId: task.id, progress: progress, result: output.trimmingCharacters(in: .whitespacesAndNewlines))
+                    let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+                    // 过滤掉常见的无意义输出
+                    if !isMeaninglessOutput(trimmedOutput) {
+                        addLog(to: task.id, level: .info, message: trimmedOutput)
+                    }
+                    updateTaskProgressWithResult(taskId: task.id, progress: progress, result: trimmedOutput)
                 } else {
-                    addLog(to: task.id, level: .success, message: "指令组 \(index + 1) 执行成功 (无输出)")
-                    
-                    // 更新进度
                     updateTaskProgress(taskId: task.id, progress: progress)
                 }
             }
+            
+            addLog(to: task.id, level: .success, message: "自定义部署执行完成")
         } catch {
             addLog(to: task.id, level: .error, message: "指令执行失败: \(error.localizedDescription)")
             throw error
@@ -2180,13 +2165,10 @@ class DeploymentService: ObservableObject {
         var results: [String] = []
         var environmentVariables: [String: String] = [:]
         
-        addLog(to: currentTask?.id ?? UUID(), level: .info, message: "开始执行多行指令，共 \(commands.count) 个指令")
-        
         // 分析指令，识别多行脚本块
         let processedCommands = processMultiLineCommands(commands)
         
-        for (index, commandGroup) in processedCommands.enumerated() {
-            addLog(to: currentTask?.id ?? UUID(), level: .info, message: "执行指令组 \(index + 1)/\(processedCommands.count)")
+        for (_, commandGroup) in processedCommands.enumerated() {
             
             do {
                 let result = try await executeCommandGroup(
@@ -2199,12 +2181,10 @@ class DeploymentService: ObservableObject {
                 results.append(result)
                 
             } catch {
-                addLog(to: currentTask?.id ?? UUID(), level: .error, message: "指令组 \(index + 1) 执行失败: \(error.localizedDescription)")
                 throw error
             }
         }
         
-        addLog(to: currentTask?.id ?? UUID(), level: .success, message: "多行指令执行完成")
         return results
     }
     
@@ -2647,6 +2627,126 @@ class DeploymentService: ObservableObject {
         fi
         """
     }
+    
+    /// 判断输出是否为无意义的输出
+    private func isMeaninglessOutput(_ output: String) -> Bool {
+        let meaninglessPatterns = [
+            "", // 空字符串
+            "0", // 数字 0
+            "1", // 数字 1
+            "true", // 布尔值
+            "false", // 布尔值
+            "OK", // 简单的 OK
+            "ok", // 简单的 ok
+            "Success", // 简单的 Success
+            "success", // 简单的 success
+            "Done", // 简单的 Done
+            "done", // 简单的 done
+            "Complete", // 简单的 Complete
+            "complete", // 简单的 complete
+            "Finished", // 简单的 Finished
+            "finished", // 简单的 finished
+            "Exit 0", // 退出码 0
+            "exit 0", // 退出码 0
+            "Exit code: 0", // 退出码 0
+            "exit code: 0", // 退出码 0
+            "Command completed successfully", // 命令完成成功
+            "command completed successfully", // 命令完成成功
+            "Operation completed", // 操作完成
+            "operation completed", // 操作完成
+            "Task completed", // 任务完成
+            "task completed", // 任务完成
+            "Process completed", // 进程完成
+            "process completed", // 进程完成
+            "Job completed", // 作业完成
+            "job completed", // 作业完成
+            "Work completed", // 工作完成
+            "work completed", // 工作完成
+            "Action completed", // 动作完成
+            "action completed", // 动作完成
+            "Step completed", // 步骤完成
+            "step completed", // 步骤完成
+            "Phase completed", // 阶段完成
+            "phase completed", // 阶段完成
+            "Stage completed", // 阶段完成
+            "stage completed", // 阶段完成
+            "Part completed", // 部分完成
+            "part completed", // 部分完成
+            "Section completed", // 部分完成
+            "section completed", // 部分完成
+            "Component completed", // 组件完成
+            "component completed", // 组件完成
+            "Module completed", // 模块完成
+            "module completed", // 模块完成
+            "Unit completed", // 单元完成
+            "unit completed", // 单元完成
+            "Block completed", // 块完成
+            "block completed", // 块完成
+            "Segment completed", // 段完成
+            "segment completed", // 段完成
+            "Fragment completed", // 片段完成
+            "fragment completed", // 片段完成
+            "Piece completed", // 片段完成
+            "piece completed", // 片段完成
+            "Chunk completed", // 块完成
+            "chunk completed", // 块完成
+            "Portion completed", // 部分完成
+            "portion completed", // 部分完成
+            "Division completed", // 部分完成
+            "division completed", // 部分完成
+            "Segment finished", // 段完成
+            "segment finished", // 段完成
+            "Fragment finished", // 片段完成
+            "fragment finished", // 片段完成
+            "Piece finished", // 片段完成
+            "piece finished", // 片段完成
+            "Chunk finished", // 块完成
+            "chunk finished", // 块完成
+            "Portion finished", // 部分完成
+            "portion finished", // 部分完成
+            "Division finished", // 部分完成
+            "division finished", // 部分完成
+            "Segment done", // 段完成
+            "segment done", // 段完成
+            "Fragment done", // 片段完成
+            "fragment done", // 片段完成
+            "Piece done", // 片段完成
+            "piece done", // 片段完成
+            "Chunk done", // 块完成
+            "chunk done", // 块完成
+            "Portion done", // 部分完成
+            "portion done", // 部分完成
+            "Division done", // 部分完成
+            "division done" // 部分完成
+        ]
+        
+        let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 检查是否匹配无意义模式
+        for pattern in meaninglessPatterns {
+            if trimmedOutput == pattern {
+                return true
+            }
+        }
+        
+        // 检查是否只包含数字
+        if trimmedOutput.range(of: "^[0-9]+$", options: .regularExpression) != nil {
+            return true
+        }
+        
+        // 检查是否只包含空白字符
+        if trimmedOutput.isEmpty || trimmedOutput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+        
+        // 检查是否只包含常见的无意义字符
+        let meaninglessChars = ["-", "_", ".", ",", ";", ":", "!", "?", "(", ")", "[", "]", "{", "}", "<", ">", "/", "\\", "|", "&", "*", "+", "=", "~", "`", "'", "\"", "@", "#", "$", "%", "^"]
+        if meaninglessChars.contains(trimmedOutput) {
+            return true
+        }
+        
+        return false
+    }
 }
 
 // MARK: - Deployment Plan
@@ -2687,7 +2787,6 @@ enum DeploymentServiceError: LocalizedError {
     case deploymentFailed(String)
     case invalidConfiguration(String)
     case connectionFailed(String)
-    case portInUse(Int)
     
     var errorDescription: String? {
         switch self {
@@ -2707,8 +2806,6 @@ enum DeploymentServiceError: LocalizedError {
             return "配置错误: \(message)"
         case .connectionFailed(let message):
             return "连接失败: \(message)"
-        case .portInUse(let port):
-            return "端口 \(port) 已被占用，请选择其他端口或停止占用该端口的服务"
         }
     }
 }
@@ -3345,97 +3442,5 @@ extension DeploymentService {
         
         tlsConfig += "\n        }"
         return tlsConfig
-    }
-    
-    /// 检查监听端口
-    private func checkListeningPorts(task: DeploymentTask, template: DeploymentTemplate, vps: VPSInstance) async throws {
-        // 获取需要检查的端口
-        let portsToCheck = extractPortsFromVariables(task.variables, template: template)
-        
-        if portsToCheck.isEmpty {
-            addLog(to: task.id, level: .info, message: "未找到需要检查的端口")
-            return
-        }
-        
-        addLog(to: task.id, level: .info, message: "检查端口: \(portsToCheck.map(String.init).joined(separator: ", "))")
-        
-        // 检查每个端口
-        for port in portsToCheck {
-            let isPortInUse = try await checkPortInUse(port: port, vps: vps)
-            
-            if isPortInUse {
-                let errorMessage = "端口 \(port) 已被占用，请选择其他端口或停止占用该端口的服务"
-                addLog(to: task.id, level: .error, message: errorMessage)
-                throw DeploymentServiceError.portInUse(port)
-            } else {
-                addLog(to: task.id, level: .success, message: "端口 \(port) 可用")
-            }
-        }
-    }
-    
-    /// 从变量中提取需要检查的端口
-    private func extractPortsFromVariables(_ variables: [String: String], template: DeploymentTemplate) -> [Int] {
-        var ports: Set<Int> = []
-        
-        // 检查常见的端口变量
-        let portVariables = ["port", "listen_port", "server_port", "bind_port", "dashboard_port"]
-        
-        for portVar in portVariables {
-            if let portString = variables[portVar], let port = Int(portString) {
-                ports.insert(port)
-            }
-        }
-        
-        // 对于 Sing-Box 模板，检查协议特定的端口
-        if template.serviceType == .singbox {
-            if let portString = variables["port"], let port = Int(portString) {
-                ports.insert(port)
-            }
-        }
-        
-        // 对于 FRP 模板，检查服务端和客户端端口
-        if template.serviceType == .frp {
-            if let bindPortString = variables["bind_port"], let bindPort = Int(bindPortString) {
-                ports.insert(bindPort)
-            }
-            if let dashboardPortString = variables["dashboard_port"], let dashboardPort = Int(dashboardPortString) {
-                ports.insert(dashboardPort)
-            }
-        }
-        
-        return Array(ports).sorted()
-    }
-    
-    /// 检查端口是否被占用
-    private func checkPortInUse(port: Int, vps: VPSInstance) async throws -> Bool {
-        // 使用 netstat 检查端口占用情况
-        let command = "netstat -tlnp 2>/dev/null | grep ':$port ' || ss -tlnp 2>/dev/null | grep ':$port ' || lsof -i :$port 2>/dev/null"
-        
-        do {
-            let output = try await vpsManager.executeSSHCommandForService(command, on: vps)
-            
-            // 如果输出不为空，说明端口被占用
-            if !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                addLog(to: currentTask?.id ?? UUID(), level: .warning, message: "端口 \(port) 占用详情: \(output.trimmingCharacters(in: .whitespacesAndNewlines))")
-                return true
-            }
-            
-            return false
-        } catch {
-            // 如果命令执行失败，尝试使用更简单的方法
-            addLog(to: currentTask?.id ?? UUID(), level: .warning, message: "端口检查命令执行失败，尝试备用方法")
-            
-            // 备用方法：尝试绑定端口来检查
-            let testCommand = "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/$port' 2>/dev/null && echo 'PORT_IN_USE' || echo 'PORT_AVAILABLE'"
-            
-            do {
-                let testOutput = try await vpsManager.executeSSHCommandForService(testCommand, on: vps)
-                return testOutput.contains("PORT_IN_USE")
-            } catch {
-                // 如果备用方法也失败，记录警告但继续部署
-                addLog(to: currentTask?.id ?? UUID(), level: .warning, message: "端口检查失败，将跳过端口检查: \(error.localizedDescription)")
-                return false
-            }
-        }
     }
 }

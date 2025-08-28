@@ -12,7 +12,6 @@ struct DeploymentExecutionView: View {
     
     @State private var isExecuting = false
     @State private var currentTask: DeploymentTask?
-    @State private var showingLogs = false
     @State private var progressCancellable: AnyCancellable?
     
     var body: some View {
@@ -279,63 +278,37 @@ struct DeploymentExecutionView: View {
                 
                 Spacer()
                 
-                Button("查看详细日志") {
-                    showingLogs = true
-                }
-                .font(.caption)
-                .foregroundColor(.blue)
+                Text("\(task.logs.count) 条")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
             
-            // 只显示重要的用户友好的日志
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 8) {
-                    ForEach(getUserFriendlyLogs(task.logs), id: \.id) { log in
-                        UserFriendlyLogRowView(log: log)
+            if task.logs.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+                    
+                    Text("暂无日志")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        ForEach(task.logs) { log in
+                            LogRowView(log: log)
+                        }
                     }
                 }
+                .frame(maxHeight: 300)
             }
-            .frame(maxHeight: 200)
         }
         .padding()
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
-        .sheet(isPresented: $showingLogs) {
-            DeploymentLogsView(task: task)
-        }
-    }
-    
-    /// 获取用户友好的日志，过滤掉技术性细节
-    private func getUserFriendlyLogs(_ logs: [DeploymentLog]) -> [DeploymentLog] {
-        return logs.filter { log in
-            // 只显示重要的用户关心的日志
-            let importantMessages = [
-                "正在连接 SSH",
-                "SSH 连接成功",
-                "正在检测系统环境",
-                "系统检测:",
-                "开始部署",
-                "正在处理模板变量",
-                "准备执行",
-                "开始执行",
-                "指令组",
-                "执行成功",
-                "正在生成服务文件",
-                "服务文件生成完成",
-                "正在启动服务",
-                "服务启动完成",
-                "正在生成配置文件",
-                "配置文件生成完成",
-                "部署完成",
-                "部署失败",
-                "端口检查",
-                "端口可用",
-                "端口已被占用"
-            ]
-            
-            return importantMessages.contains { log.message.contains($0) } ||
-                   log.level == .error ||
-                   log.level == .success
-        }
     }
     
     // MARK: - Action Buttons Section
