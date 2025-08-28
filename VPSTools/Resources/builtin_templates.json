@@ -135,9 +135,10 @@
         "sudo mkdir -p /var/log/sing-box",
         "sudo mkdir -p /var/lib/sing-box",
         "sing-box version",
-        "cd / && sudo rm -rf /tmp/singbox_install"
+        "cd / && sudo rm -rf /tmp/singbox_install",
+        "echo 'SingBox 安装完成，准备配置和启动服务'"
       ],
-      "configTemplate": "{\n    \"log\": {\n        \"level\": \"{{log_level}}\",\n        \"timestamp\": true,\n        \"output\": \"stdout\"\n    },\n    \"inbounds\": [\n        {{inbound_config}}\n    ],\n    \"outbounds\": [\n        {\n            \"type\": \"direct\",\n            \"tag\": \"direct\"\n        },\n        {\n            \"type\": \"block\",\n            \"tag\": \"block\"\n        }\n    ],\n    \"route\": {\n        \"rules\": [\n            {\n                \"geoip\": \"private\",\n                \"outbound\": \"direct\"\n            },\n            {\n                \"geoip\": \"cn\",\n                \"outbound\": \"direct\"\n            }\n        ],\n        \"final\": \"direct\"\n    }\n}",
+      "configTemplate": "{\n    \"log\": {\n        \"level\": \"{{log_level}}\",\n        \"timestamp\": true,\n        \"output\": \"stdout\"\n    },\n    \"inbounds\": [\n        {{inbound_config}}\n    ],\n    \"outbounds\": [\n        {\n            \"type\": \"direct\",\n            \"tag\": \"direct\"\n        },\n        {\n            \"type\": \"block\",\n            \"tag\": \"block\"\n        }\n    ],\n    \"route\": {\n        \"rules\": [\n            {\n                \"ip_cidr\": [\n                    \"127.0.0.1/32\",\n                    \"10.0.0.0/8\",\n                    \"172.16.0.0/12\",\n                    \"192.168.0.0/16\",\n                    \"169.254.0.0/16\",\n                    \"::1/128\",\n                    \"fc00::/7\",\n                    \"fe80::/10\"\n                ],\n                \"outbound\": \"direct\"\n            }\n        ],\n        \"final\": \"direct\"\n    }\n}",
       "serviceTemplate": "[Unit]\nDescription=sing-box service\nDocumentation=https://sing-box.sagernet.org\nAfter=network.target nss-lookup.target\n\n[Service]\nType=simple\nUser=root\nGroup=root\nCapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE\nAmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE\nExecStart=/usr/local/bin/sing-box run -c /etc/sing-box/config.json\nRestart=on-failure\nRestartSec=1s\nLimitNOFILE=infinity\n\n[Install]\nWantedBy=multi-user.target",
       "variables": [
         {
@@ -1052,11 +1053,10 @@
         "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
         "sudo apt update",
         "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin",
-        "sudo systemctl enable docker",
-        "sudo systemctl start docker",
         "sudo usermod -aG docker $USER",
         "docker --version",
-        "docker compose version"
+        "docker compose version",
+        "echo 'Docker 环境安装完成，准备启动服务'"
       ],
       "configTemplate": "",
       "serviceTemplate": "",
@@ -1086,8 +1086,7 @@
         "mkdir -p {{app_directory}}",
         "cd {{app_directory}}",
         "cat > docker-compose.yml << 'EOF'\n{{docker_compose_config}}\nEOF",
-        "docker compose up -d",
-        "docker compose ps"
+        "echo 'Docker Compose 配置文件已生成，准备启动应用'"
       ],
       "configTemplate": "version: '3.8'\nservices:\n  app:\n    image: {{image_name}}\n    container_name: {{container_name}}\n    ports:\n      - \"{{host_port}}:{{container_port}}\"\n    environment:\n      - NODE_ENV={{node_env}}\n    volumes:\n      - ./data:/app/data\n    restart: unless-stopped",
       "serviceTemplate": "",
@@ -1161,8 +1160,7 @@
       "commands": [
         "mkdir -p {{proxy_directory}}",
         "cd {{proxy_directory}} && cat > docker-compose.yml << 'EOF'\n{{proxy_compose_config}}\nEOF",
-        "cd {{proxy_directory}} && docker compose up -d",
-        "cd {{proxy_directory}} && docker compose logs -f"
+        "echo 'Docker 网络代理配置文件已生成，准备启动服务'"
       ],
       "configTemplate": "version: '3.8'\nservices:\n  {{proxy_service}}:\n    image: {{proxy_image}}\n    container_name: {{proxy_container_name}}\n    ports:\n      - \"{{proxy_port}}:{{proxy_container_port}}\"\n    environment:\n      - PASSWORD={{proxy_password}}\n      - METHOD={{proxy_method}}\n      - SERVER_PORT={{proxy_container_port}}\n    volumes:\n      - ./config:/etc/{{proxy_service}}\n    restart: unless-stopped",
       "serviceTemplate": "",

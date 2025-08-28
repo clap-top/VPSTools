@@ -417,34 +417,34 @@ class DeploymentService: ObservableObject {
             throw error
         }
         
-        // 生成服务文件（如果有）
-        if !template.serviceTemplate.isEmpty {
-            addLog(to: task.id, level: .info, message: "正在生成服务文件...")
-            updateTaskProgress(taskId: task.id, progress: 0.9)
-            
-            try await generateServiceFile(template: template, variables: task.variables, vps: vps)
-            
-            addLog(to: task.id, level: .success, message: "服务文件生成完成")
-            updateTaskProgress(taskId: task.id, progress: 0.92)
-            
-            // 重新加载 systemd 并启动服务
-            addLog(to: task.id, level: .info, message: "正在启动服务...")
-            updateTaskProgress(taskId: task.id, progress: 0.93)
-            
-            try await executeServiceCommands(template: template, systemInfo: systemInfo, vps: vps)
-            
-            addLog(to: task.id, level: .success, message: "服务启动完成")
-            updateTaskProgress(taskId: task.id, progress: 0.94)
-        }
-        
         // 生成配置文件（如果有）
         if !template.configTemplate.isEmpty {
             addLog(to: task.id, level: .info, message: "正在生成配置文件...")
-            updateTaskProgress(taskId: task.id, progress: 0.95)
+            updateTaskProgress(taskId: task.id, progress: 0.9)
             
             try await generateConfigurationFile(template: template, variables: task.variables, vps: vps)
             
             addLog(to: task.id, level: .success, message: "配置文件生成完成")
+            updateTaskProgress(taskId: task.id, progress: 0.92)
+        }
+        
+        // 生成服务文件（如果有）
+        if !template.serviceTemplate.isEmpty {
+            addLog(to: task.id, level: .info, message: "正在生成服务文件...")
+            updateTaskProgress(taskId: task.id, progress: 0.93)
+            
+            try await generateServiceFile(template: template, variables: task.variables, vps: vps)
+            
+            addLog(to: task.id, level: .success, message: "服务文件生成完成")
+            updateTaskProgress(taskId: task.id, progress: 0.94)
+            
+            // 重新加载 systemd 并启动服务
+            addLog(to: task.id, level: .info, message: "正在启动服务...")
+            updateTaskProgress(taskId: task.id, progress: 0.95)
+            
+            try await executeServiceCommands(template: template, systemInfo: systemInfo, vps: vps)
+            
+            addLog(to: task.id, level: .success, message: "服务启动完成")
             updateTaskProgress(taskId: task.id, progress: 0.98)
         } else {
             updateTaskProgress(taskId: task.id, progress: 0.98)
@@ -1806,7 +1806,10 @@ class DeploymentService: ObservableObject {
                 "sudo systemctl unmask sing-box 2>/dev/null || true",
                 "sudo systemctl enable sing-box",
                 "sudo systemctl start sing-box",
-                "systemctl is-active sing-box"
+                "sudo systemctl status sing-box --no-pager -l",
+                "echo 'SingBox 服务启动完成，正在检查服务状态...'",
+                "systemctl is-active sing-box",
+                "echo 'SingBox 服务状态检查完成'"
             ]
             
         case .frp:
@@ -1845,6 +1848,41 @@ class DeploymentService: ObservableObject {
                 "systemctl is-active nginx",
                 "systemctl is-active mysql"
             ]
+            
+        case .docker:
+            // 根据模板名称确定具体的 Docker 启动命令
+            if template.name.contains("Compose") || template.name.contains("代理") || template.name.contains("应用") {
+                // Docker Compose 应用需要启动容器
+                serviceCommands = [
+                    "sudo systemctl daemon-reload",
+                    "sudo systemctl unmask docker 2>/dev/null || true",
+                    "sudo systemctl enable docker",
+                    "sudo systemctl start docker",
+                    "sudo systemctl status docker --no-pager -l",
+                    "echo 'Docker 服务启动完成，正在检查服务状态...'",
+                    "systemctl is-active docker",
+                    "docker --version",
+                    "docker compose version",
+                    "echo 'Docker 服务状态检查完成，准备启动容器...'",
+                    "cd {{app_directory}} && docker compose up -d",
+                    "cd {{app_directory}} && docker compose ps",
+                    "echo 'Docker 容器启动完成'"
+                ]
+            } else {
+                // 纯 Docker 环境安装
+                serviceCommands = [
+                    "sudo systemctl daemon-reload",
+                    "sudo systemctl unmask docker 2>/dev/null || true",
+                    "sudo systemctl enable docker",
+                    "sudo systemctl start docker",
+                    "sudo systemctl status docker --no-pager -l",
+                    "echo 'Docker 服务启动完成，正在检查服务状态...'",
+                    "systemctl is-active docker",
+                    "docker --version",
+                    "docker compose version",
+                    "echo 'Docker 服务状态检查完成'"
+                ]
+            }
             
         default:
             // 对于其他服务类型，使用通用的服务管理命令
