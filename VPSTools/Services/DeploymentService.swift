@@ -283,7 +283,13 @@ class DeploymentService: ObservableObject {
         
         var configContent = template.configTemplate
         
-        // 替换变量
+        // 特殊处理 sing-box 配置
+        if template.serviceType == .singbox {
+            let inboundConfig = generateSingBoxInboundConfig(variables: variables)
+            configContent = configContent.replacingOccurrences(of: "{{inbound_config}}", with: inboundConfig)
+        }
+        
+        // 替换其他变量
         for (key, value) in variables {
             configContent = configContent.replacingOccurrences(of: "{{\(key)}}", with: value)
         }
@@ -1045,7 +1051,13 @@ class DeploymentService: ObservableObject {
     private func generateConfigurationFile(template: DeploymentTemplate, variables: [String: String], vps: VPSInstance) async throws {
         var configContent = template.configTemplate
         
-        // 替换变量
+        // 特殊处理 sing-box 配置
+        if template.serviceType == .singbox {
+            let inboundConfig = generateSingBoxInboundConfig(variables: variables)
+            configContent = configContent.replacingOccurrences(of: "{{inbound_config}}", with: inboundConfig)
+        }
+        
+        // 替换其他变量
         for (key, value) in variables {
             configContent = configContent.replacingOccurrences(of: "{{\(key)}}", with: value)
         }
@@ -1078,6 +1090,378 @@ class DeploymentService: ObservableObject {
         // 写入配置文件
         try await vpsManager.writeFile(content: configContent, to: configPath, on: vps)
         addLog(to: currentTask?.id ?? UUID(), level: .success, message: "配置文件生成成功: \(configFileName)")
+    }
+    
+    /// 生成 sing-box inbound 配置
+    private func generateSingBoxInboundConfig(variables: [String: String]) -> String {
+        guard let protocolType = variables["protocol"] else {
+            return "{}"
+        }
+        
+        let port = variables["port"] ?? "8080"
+        
+        switch protocolType {
+        case "direct":
+            return generateDirectConfig(variables: variables, port: port)
+        case "mixed":
+            return generateMixedConfig(variables: variables, port: port)
+        case "socks":
+            return generateSOCKSConfig(variables: variables, port: port)
+        case "http":
+            return generateHTTPConfig(variables: variables, port: port)
+        case "shadowsocks":
+            return generateShadowsocksConfig(variables: variables, port: port)
+        case "vmess":
+            return generateVMessConfig(variables: variables, port: port)
+        case "trojan":
+            return generateTrojanConfig(variables: variables, port: port)
+        case "naive":
+            return generateNaiveConfig(variables: variables, port: port)
+        case "hysteria":
+            return generateHysteriaConfig(variables: variables, port: port)
+        case "shadowtls":
+            return generateShadowTLSConfig(variables: variables, port: port)
+        case "tuic":
+            return generateTUICConfig(variables: variables, port: port)
+        case "hysteria2":
+            return generateHysteria2Config(variables: variables, port: port)
+        case "vless":
+            return generateVLESSConfig(variables: variables, port: port)
+        case "anytls":
+            return generateAnyTLSConfig(variables: variables, port: port)
+        case "tun":
+            return generateTunConfig(variables: variables, port: port)
+        case "redirect":
+            return generateRedirectConfig(variables: variables, port: port)
+        case "tproxy":
+            return generateTProxyConfig(variables: variables, port: port)
+        default:
+            return "{}"
+        }
+    }
+    
+    /// 生成 Shadowsocks 配置
+    private func generateShadowsocksConfig(variables: [String: String], port: String) -> String {
+        let password = variables["password"] ?? ""
+        let method = variables["method"] ?? "aes-256-gcm"
+        
+        return """
+        {
+            "type": "shadowsocks",
+            "tag": "shadowsocks-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "method": "\(method)",
+            "password": "\(password)"
+        }
+        """
+    }
+    
+    /// 生成 VMess 配置
+    private func generateVMessConfig(variables: [String: String], port: String) -> String {
+        let uuid = variables["vmess_uuid"] ?? ""
+        let alterId = variables["vmess_alter_id"] ?? "0"
+        
+        var config = """
+        {
+            "type": "vmess",
+            "tag": "vmess-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "users": [
+                {
+                    "uuid": "\(uuid)",
+                    "alter_id": \(alterId)
+                }
+            ]
+        """
+        
+        // 添加 TLS 配置（如果启用）
+        if let tlsConfig = generateTLSConfig(variables: variables, isServer: true) {
+            config += """
+            ,
+            \(tlsConfig)
+            """
+        }
+        
+        config += "\n    }"
+        return config
+    }
+    
+    /// 生成 Trojan 配置
+    private func generateTrojanConfig(variables: [String: String], port: String) -> String {
+        let uuid = variables["trojan_uuid"] ?? ""
+        
+        var config = """
+        {
+            "type": "trojan",
+            "tag": "trojan-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "users": [
+                {
+                    "uuid": "\(uuid)"
+                }
+            ]
+        """
+        
+        // 添加 TLS 配置（如果启用）
+        if let tlsConfig = generateTLSConfig(variables: variables, isServer: true) {
+            config += """
+            ,
+            \(tlsConfig)
+            """
+        }
+        
+        config += "\n    }"
+        return config
+    }
+    
+    /// 生成 Hysteria2 配置
+    private func generateHysteria2Config(variables: [String: String], port: String) -> String {
+        let password = variables["hysteria2_password"] ?? ""
+        
+        var config = """
+        {
+            "type": "hysteria2",
+            "tag": "hysteria2-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "password": "\(password)"
+        """
+        
+        // 添加 TLS 配置（如果启用）
+        if let tlsConfig = generateTLSConfig(variables: variables, isServer: true) {
+            config += """
+            ,
+            \(tlsConfig)
+            """
+        }
+        
+        config += "\n    }"
+        return config
+    }
+    
+    /// 生成 TUIC 配置
+    private func generateTUICConfig(variables: [String: String], port: String) -> String {
+        let uuid = variables["tuic_uuid"] ?? ""
+        let password = variables["tuic_password"] ?? ""
+        let congestionControl = variables["tuic_congestion_control"] ?? "bbr"
+        let udpRelayMode = variables["tuic_udp_relay_mode"] ?? "native"
+        let maxDatagramSize = variables["tuic_max_datagram_size"] ?? "1400"
+        
+        return """
+        {
+            "type": "tuic",
+            "tag": "tuic-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "users": [
+                {
+                    "uuid": "\(uuid)",
+                    "password": "\(password)"
+                }
+            ],
+            "congestion_control": "\(congestionControl)",
+            "udp_relay_mode": "\(udpRelayMode)",
+            "max_datagram_size": \(maxDatagramSize)
+        }
+        """
+    }
+    
+    /// 生成 VLESS 配置
+    private func generateVLESSConfig(variables: [String: String], port: String) -> String {
+        let uuid = variables["vless_uuid"] ?? ""
+        let flow = variables["vless_flow"] ?? ""
+        let transportType = variables["vless_transport_type"] ?? "tcp"
+        let transportPath = variables["vless_transport_path"] ?? "/"
+        let multiplexEnabled = variables["vless_multiplex_enabled"] ?? "false"
+        let multiplexPadding = variables["vless_multiplex_padding"] ?? "false"
+        let multiplexBrutalEnabled = variables["vless_multiplex_brutal_enabled"] ?? "false"
+        let multiplexBrutalUpMbps = variables["vless_multiplex_brutal_up_mbps"] ?? "10000"
+        let multiplexBrutalDownMbps = variables["vless_multiplex_brutal_down_mbps"] ?? "10000"
+        
+        var config = """
+        {
+            "type": "vless",
+            "tag": "vless-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "users": [
+                {
+                    "uuid": "\(uuid)"
+        """
+        
+        // 添加 flow 参数（如果提供）
+        if !flow.isEmpty {
+            config += """
+            ,
+                    "flow": "\(flow)"
+            """
+        }
+        
+        config += """
+                }
+            ]
+        """
+        
+        // 添加 TLS 配置（如果启用）
+        if let tlsConfig = generateTLSConfig(variables: variables, isServer: true) {
+            config += """
+            ,
+            \(tlsConfig)
+            """
+        }
+        
+        // 添加传输配置（如果不是默认的 tcp）
+        if transportType != "tcp" {
+            config += """
+            ,
+            "transport": {
+                "type": "\(transportType)"
+        """
+            
+            if transportType == "ws" || transportType == "grpc" {
+                config += """
+                ,
+                "path": "\(transportPath)"
+                """
+            }
+            
+            config += "\n            }"
+        }
+        
+        // 添加多路复用配置（如果启用）
+        if multiplexEnabled == "true" {
+            config += """
+            ,
+            "multiplex": {
+                "enabled": true
+        """
+            
+            // 添加 padding 配置
+            if multiplexPadding == "true" {
+                config += """
+                ,
+                "padding": true
+                """
+            }
+            
+            // 添加 brutal 配置
+            if multiplexBrutalEnabled == "true" {
+                config += """
+                ,
+                "brutal": {
+                    "enabled": true,
+                    "up_mbps": \(multiplexBrutalUpMbps),
+                    "down_mbps": \(multiplexBrutalDownMbps)
+                }
+                """
+            }
+            
+            config += "\n            }"
+        }
+        
+        config += "\n        }"
+        return config
+    }
+    
+    /// 生成 Hysteria 配置
+    private func generateHysteriaConfig(variables: [String: String], port: String) -> String {
+        let password = variables["hysteria_password"] ?? ""
+        let upMbps = variables["hysteria_up_mbps"] ?? "100"
+        let downMbps = variables["hysteria_down_mbps"] ?? "100"
+        
+        var config = """
+        {
+            "type": "hysteria",
+            "tag": "hysteria-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "password": "\(password)",
+            "up_mbps": \(upMbps),
+            "down_mbps": \(downMbps)
+        """
+        
+        // 添加 TLS 配置（如果启用）
+        if let tlsConfig = generateTLSConfig(variables: variables, isServer: true) {
+            config += """
+            ,
+            \(tlsConfig)
+            """
+        }
+        
+        config += "\n        }"
+        return config
+    }
+    
+    /// 生成 ShadowTLS 配置
+    private func generateShadowTLSConfig(variables: [String: String], port: String) -> String {
+        let password = variables["shadowtls_password"] ?? ""
+        let server = variables["shadowtls_server"] ?? "www.microsoft.com"
+        
+        return """
+        {
+            "type": "shadowtls",
+            "tag": "shadowtls-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "password": "\(password)",
+            "server": "\(server)"
+        }
+        """
+    }
+    
+    /// 生成 Naive 配置
+    private func generateNaiveConfig(variables: [String: String], port: String) -> String {
+        let username = variables["naive_username"] ?? ""
+        let password = variables["naive_password"] ?? ""
+        
+        return """
+        {
+            "type": "naive",
+            "tag": "naive-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "users": [
+                {
+                    "username": "\(username)",
+                    "password": "\(password)"
+                }
+            ]
+        }
+        """
+    }
+    
+    /// 生成 AnyTLS 配置
+    private func generateAnyTLSConfig(variables: [String: String], port: String) -> String {
+        let uuid = variables["anytls_uuid"] ?? ""
+        let server = variables["anytls_server"] ?? "www.microsoft.com"
+        
+        var config = """
+        {
+            "type": "anytls",
+            "tag": "anytls-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "users": [
+                {
+                    "uuid": "\(uuid)"
+                }
+            ],
+            "server": "\(server)"
+        """
+        
+        // 添加 TLS 配置（如果启用）
+        if let tlsConfig = generateTLSConfig(variables: variables, isServer: true) {
+            config += """
+            ,
+            \(tlsConfig)
+            """
+        }
+        
+        config += "\n        }"
+        return config
     }
     
     private func generateServiceFile(template: DeploymentTemplate, variables: [String: String], vps: VPSInstance) async throws {
@@ -1234,6 +1618,8 @@ class DeploymentService: ObservableObject {
     }
     
     private func loadTemplatesFromRemote() async {
+        await loadLocalBackupTemplates()
+        return
         await MainActor.run {
             self.isTemplatesLoading = true
         }
@@ -2288,5 +2674,360 @@ extension DeploymentService {
     /// 手动刷新远程模板
     func refreshTemplates() async {
         await loadTemplatesFromRemote()
+    }
+    
+    // MARK: - 新增协议配置生成方法
+    
+    /// 生成 Direct 配置
+    private func generateDirectConfig(variables: [String: String], port: String) -> String {
+        return """
+        {
+            "type": "direct",
+            "tag": "direct-in",
+            "listen": "::",
+            "listen_port": \(port)
+        }
+        """
+    }
+    
+    /// 生成 Mixed 配置
+    private func generateMixedConfig(variables: [String: String], port: String) -> String {
+        return """
+        {
+            "type": "mixed",
+            "tag": "mixed-in",
+            "listen": "::",
+            "listen_port": \(port)
+        }
+        """
+    }
+    
+    /// 生成 SOCKS 配置
+    private func generateSOCKSConfig(variables: [String: String], port: String) -> String {
+        let username = variables["socks_username"] ?? ""
+        let password = variables["socks_password"] ?? ""
+        
+        var config = """
+        {
+            "type": "socks",
+            "tag": "socks-in",
+            "listen": "::",
+            "listen_port": \(port)
+        """
+        
+        if !username.isEmpty && !password.isEmpty {
+            config += """
+            ,
+            "users": [
+                {
+                    "username": "\(username)",
+                    "password": "\(password)"
+                }
+            ]
+            """
+        }
+        
+        config += "\n}"
+        return config
+    }
+    
+    /// 生成 HTTP 配置
+    private func generateHTTPConfig(variables: [String: String], port: String) -> String {
+        let username = variables["http_username"] ?? ""
+        let password = variables["http_password"] ?? ""
+        
+        var config = """
+        {
+            "type": "http",
+            "tag": "http-in",
+            "listen": "::",
+            "listen_port": \(port)
+        """
+        
+        if !username.isEmpty && !password.isEmpty {
+            config += """
+            ,
+            "users": [
+                {
+                    "username": "\(username)",
+                    "password": "\(password)"
+                }
+            ]
+            """
+        }
+        
+        config += "\n}"
+        return config
+    }
+    
+    /// 生成 Tun 配置
+    private func generateTunConfig(variables: [String: String], port: String) -> String {
+        let interfaceName = variables["tun_interface_name"] ?? "tun0"
+        let mtu = variables["tun_mtu"] ?? "1500"
+        let autoRoute = variables["tun_auto_route"] ?? "true"
+        
+        return """
+        {
+            "type": "tun",
+            "tag": "tun-in",
+            "interface_name": "\(interfaceName)",
+            "mtu": \(mtu),
+            "auto_route": \(autoRoute)
+        }
+        """
+    }
+    
+    /// 生成 Redirect 配置
+    private func generateRedirectConfig(variables: [String: String], port: String) -> String {
+        let redirectTo = variables["redirect_to"] ?? ""
+        
+        return """
+        {
+            "type": "redirect",
+            "tag": "redirect-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "to": "\(redirectTo)"
+        }
+        """
+    }
+    
+    /// 生成 TProxy 配置
+    private func generateTProxyConfig(variables: [String: String], port: String) -> String {
+        let mode = variables["tproxy_mode"] ?? "redirect"
+        let network = variables["tproxy_network"] ?? "tcp"
+        
+        return """
+        {
+            "type": "tproxy",
+            "tag": "tproxy-in",
+            "listen": "::",
+            "listen_port": \(port),
+            "mode": "\(mode)",
+            "network": "\(network)"
+        }
+        """
+    }
+    
+    // MARK: - TLS 配置生成方法
+    
+    /// 生成通用 TLS 配置
+    private func generateTLSConfig(variables: [String: String], isServer: Bool = true) -> String? {
+        let tlsEnabled = variables["tls_enabled"] ?? "false"
+        if tlsEnabled != "true" {
+            return nil
+        }
+        
+        var tlsConfig = """
+        "tls": {
+            "enabled": true
+        """
+        
+        // 基础 TLS 字段
+        if let serverName = variables["tls_server_name"], !serverName.isEmpty {
+            tlsConfig += """
+            ,
+            "server_name": "\(serverName)"
+            """
+        }
+        
+        if isServer {
+            // 服务端 TLS 配置
+            if let certPath = variables["tls_certificate_path"], !certPath.isEmpty {
+                tlsConfig += """
+                ,
+                "certificate_path": "\(certPath)"
+                """
+            }
+            
+            if let keyPath = variables["tls_key_path"], !keyPath.isEmpty {
+                tlsConfig += """
+                ,
+                "key_path": "\(keyPath)"
+                """
+            }
+        } else {
+            // 客户端 TLS 配置
+            if let insecure = variables["tls_insecure"], insecure == "true" {
+                tlsConfig += """
+                ,
+                "insecure": true
+                """
+            }
+        }
+        
+        // ALPN 配置
+        if let alpn = variables["tls_alpn"], !alpn.isEmpty {
+            let alpnList = alpn.split(separator: ",").map { "\"\($0.trimmingCharacters(in: .whitespaces))\"" }.joined(separator: ", ")
+            tlsConfig += """
+            ,
+            "alpn": [\(alpnList)]
+            """
+        }
+        
+        // TLS 版本配置
+        if let minVersion = variables["tls_min_version"], !minVersion.isEmpty {
+            tlsConfig += """
+            ,
+            "min_version": "\(minVersion)"
+            """
+        }
+        
+        if let maxVersion = variables["tls_max_version"], !maxVersion.isEmpty {
+            tlsConfig += """
+            ,
+            "max_version": "\(maxVersion)"
+            """
+        }
+        
+        // ACME 配置
+        if let acmeEnabled = variables["tls_acme_enabled"], acmeEnabled == "true" {
+            tlsConfig += """
+            ,
+            "acme": {
+                "enabled": true
+            """
+            
+            if let domain = variables["tls_acme_domain"], !domain.isEmpty {
+                tlsConfig += """
+                ,
+                "domain": ["\(domain)"]
+                """
+            }
+            
+            if let email = variables["tls_acme_email"], !email.isEmpty {
+                tlsConfig += """
+                ,
+                "email": "\(email)"
+                """
+            }
+            
+            if let provider = variables["tls_acme_provider"], !provider.isEmpty {
+                tlsConfig += """
+                ,
+                "provider": "\(provider)"
+                """
+            }
+            
+            tlsConfig += "\n            }"
+        }
+        
+        // ECH 配置
+        if let echEnabled = variables["tls_ech_enabled"], echEnabled == "true" {
+            tlsConfig += """
+            ,
+            "ech": {
+                "enabled": true
+            """
+            
+            if isServer {
+                if let echKeyPath = variables["tls_ech_key_path"], !echKeyPath.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "key_path": "\(echKeyPath)"
+                    """
+                }
+            } else {
+                if let echConfigPath = variables["tls_ech_config_path"], !echConfigPath.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "config_path": "\(echConfigPath)"
+                    """
+                }
+            }
+            
+            tlsConfig += "\n            }"
+        }
+        
+        // Reality 配置
+        if let realityEnabled = variables["tls_reality_enabled"], realityEnabled == "true" {
+            tlsConfig += """
+            ,
+            "reality": {
+                "enabled": true
+            """
+            
+            if isServer {
+                if let privateKey = variables["tls_reality_private_key"], !privateKey.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "private_key": "\(privateKey)"
+                    """
+                }
+                
+                if let handshakeServer = variables["tls_reality_handshake_server"], !handshakeServer.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "handshake": {
+                        "server": "\(handshakeServer)"
+                    """
+                    
+                    if let handshakePort = variables["tls_reality_handshake_port"], !handshakePort.isEmpty {
+                        tlsConfig += """
+                        ,
+                        "server_port": \(handshakePort)
+                        """
+                    }
+                    
+                    tlsConfig += "\n                    }"
+                }
+            } else {
+                if let publicKey = variables["tls_reality_public_key"], !publicKey.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "public_key": "\(publicKey)"
+                    """
+                }
+            }
+            
+                    if let shortId = variables["tls_reality_short_id"], !shortId.isEmpty {
+            tlsConfig += """
+            ,
+            "short_id": ["\(shortId)"]
+            """
+        }
+            
+            tlsConfig += "\n            }"
+        }
+        
+        // uTLS 配置 (仅客户端)
+        if !isServer {
+            if let utlsEnabled = variables["tls_utls_enabled"], utlsEnabled == "true" {
+                tlsConfig += """
+                ,
+                "utls": {
+                    "enabled": true
+                """
+                
+                if let fingerprint = variables["tls_utls_fingerprint"], !fingerprint.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "fingerprint": "\(fingerprint)"
+                    """
+                }
+                
+                tlsConfig += "\n            }"
+            }
+        }
+        
+        // TLS 分片配置 (仅客户端)
+        if !isServer {
+            if let fragmentEnabled = variables["tls_fragment_enabled"], fragmentEnabled == "true" {
+                tlsConfig += """
+                ,
+                "fragment": true
+                """
+            }
+            
+            if let recordFragmentEnabled = variables["tls_record_fragment_enabled"], recordFragmentEnabled == "true" {
+                tlsConfig += """
+                ,
+                "record_fragment": true
+                """
+            }
+        }
+        
+        tlsConfig += "\n        }"
+        return tlsConfig
     }
 }

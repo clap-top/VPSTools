@@ -1018,19 +1018,118 @@ struct TemplateDetailView: View {
             
             VStack(spacing: 12) {
                 ForEach(template.variables, id: \.name) { variable in
-                    VariableInputView(
-                        variable: variable,
-                        value: Binding(
-                            get: { variables[variable.name] ?? variable.defaultValue ?? "" },
-                            set: { variables[variable.name] = $0 }
+                    if template.serviceType == .singbox && variable.name == "protocol" {
+                        // 协议选择器
+                        VariableInputView(
+                            variable: variable,
+                            value: Binding(
+                                get: { variables[variable.name] ?? variable.defaultValue ?? "" },
+                                set: { variables[variable.name] = $0 }
+                            )
                         )
-                    )
+                    } else if template.serviceType == .singbox && shouldShowVariable(variable) {
+                        // 协议相关参数
+                        ProtocolAwareVariableInputView(
+                            variable: variable,
+                            protocol: variables["protocol"] ?? "shadowsocks",
+                            value: Binding(
+                                get: { variables[variable.name] ?? variable.defaultValue ?? "" },
+                                set: { variables[variable.name] = $0 }
+                            )
+                        )
+                    } else if template.serviceType != .singbox {
+                        // 非sing-box模板的普通变量
+                        VariableInputView(
+                            variable: variable,
+                            value: Binding(
+                                get: { variables[variable.name] ?? variable.defaultValue ?? "" },
+                                set: { variables[variable.name] = $0 }
+                            )
+                        )
+                    }
                 }
             }
         }
         .padding()
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func shouldShowVariable(_ variable: TemplateVariable) -> Bool {
+        let selectedProtocol = variables["protocol"] ?? "shadowsocks"
+        
+        // 通用参数始终显示
+        if ["port", "password", "log_level"].contains(variable.name) {
+            return true
+        }
+        
+        // 通用 TLS 参数 - 对于支持 TLS 的协议显示
+        let tlsSupportedProtocols = ["vmess", "trojan", "vless", "hysteria", "shadowtls", "tuic", "hysteria2", "anytls"]
+        if tlsSupportedProtocols.contains(selectedProtocol) {
+            // TLS 开关始终显示
+            if variable.name == "tls_enabled" {
+                return true
+            }
+            
+            // 检查 TLS 是否启用
+            let tlsEnabled = variables["tls_enabled"] ?? "false"
+            if tlsEnabled == "true" {
+                let tlsParams = [
+                    "tls_server_name", "tls_insecure", "tls_alpn", 
+                    "tls_min_version", "tls_max_version", "tls_certificate_path", "tls_key_path",
+                    "tls_acme_enabled", "tls_acme_domain", "tls_acme_email", "tls_acme_provider",
+                    "tls_ech_enabled", "tls_ech_key_path", "tls_ech_config_path",
+                    "tls_reality_enabled", "tls_reality_private_key", "tls_reality_public_key",
+                    "tls_reality_handshake_server", "tls_reality_handshake_port", "tls_reality_short_id",
+                    "tls_utls_enabled", "tls_utls_fingerprint",
+                    "tls_fragment_enabled", "tls_record_fragment_enabled"
+                ]
+                if tlsParams.contains(variable.name) {
+                    return true
+                }
+            }
+        }
+        
+        // 根据协议显示相应参数
+        switch selectedProtocol {
+        case "direct", "mixed":
+            return false // 这些协议不需要额外参数
+        case "socks":
+            return ["socks_username", "socks_password"].contains(variable.name)
+        case "http":
+            return ["http_username", "http_password"].contains(variable.name)
+        case "shadowsocks":
+            return ["method"].contains(variable.name)
+        case "vmess":
+            return ["vmess_uuid", "vmess_alter_id"].contains(variable.name)
+        case "trojan":
+            return ["trojan_uuid"].contains(variable.name)
+        case "naive":
+            return ["naive_username", "naive_password"].contains(variable.name)
+        case "hysteria":
+            return ["hysteria_password", "hysteria_up_mbps", "hysteria_down_mbps"].contains(variable.name)
+        case "shadowtls":
+            return ["shadowtls_password", "shadowtls_server"].contains(variable.name)
+        case "tuic":
+            return ["tuic_uuid", "tuic_password", "tuic_congestion_control", "tuic_udp_relay_mode", "tuic_max_datagram_size"].contains(variable.name)
+        case "hysteria2":
+            return ["hysteria2_password"].contains(variable.name)
+        case "vless":
+            // VLESS 基础参数始终显示
+            return ["vless_uuid", "vless_flow", "vless_transport_type", "vless_transport_path", "vless_multiplex_enabled", "vless_multiplex_padding", "vless_multiplex_brutal_enabled", "vless_multiplex_brutal_up_mbps", "vless_multiplex_brutal_down_mbps"].contains(variable.name)
+        case "anytls":
+            return ["anytls_uuid", "anytls_server"].contains(variable.name)
+        case "tun":
+            return ["tun_interface_name", "tun_mtu", "tun_auto_route"].contains(variable.name)
+        case "redirect":
+            return ["redirect_to"].contains(variable.name)
+        case "tproxy":
+            return ["tproxy_mode", "tproxy_network"].contains(variable.name)
+        default:
+            return false
+        }
     }
     
     // MARK: - Preview Section
@@ -1164,8 +1263,136 @@ struct VariableInputView: View {
                 }
             }
             
-            TextField("输入 \(variable.name)", text: $value)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            // 根据变量类型渲染不同的输入控件
+            switch variable.type {
+            case .select:
+                if let options = variable.options, !options.isEmpty {
+                    Picker(variable.name, selection: $value) {
+                        ForEach(options, id: \.self) { option in
+                            Text(option).tag(option)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
+                } else {
+                    TextField("输入 \(variable.name)", text: $value)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+            case .password:
+                SecureField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            case .number:
+                TextField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.numberPad)
+            case .boolean:
+                Toggle(variable.name, isOn: Binding(
+                    get: { value.lowercased() == "true" },
+                    set: { value = $0 ? "true" : "false" }
+                ))
+                .toggleStyle(SwitchToggleStyle())
+            default:
+                TextField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            }
+            
+            if !variable.description.isEmpty {
+                Text(variable.description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Protocol Aware Variable Input View
+
+struct ProtocolAwareVariableInputView: View {
+    let variable: TemplateVariable
+    let `protocol`: String
+    @Binding var value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(variable.name)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                
+                if variable.required {
+                    Text("*")
+                        .foregroundColor(.red)
+                }
+                
+                Spacer()
+                
+                // 显示协议标识
+                Text("(\(`protocol`))")
+                    .font(.caption)
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(4)
+                
+                if !variable.description.isEmpty {
+                    Button(action: {
+                        // TODO: 显示帮助信息
+                    }) {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
+            // 根据变量类型渲染不同的输入控件
+            switch variable.type {
+            case .select:
+                if let options = variable.options, !options.isEmpty {
+                    Picker(variable.name, selection: $value) {
+                        ForEach(options, id: \.self) { option in
+                            Text(option).tag(option)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
+                } else {
+                    TextField("输入 \(variable.name)", text: $value)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+            case .password:
+                SecureField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            case .number:
+                TextField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.numberPad)
+            case .boolean:
+                Toggle(variable.name, isOn: Binding(
+                    get: { value.lowercased() == "true" },
+                    set: { value = $0 ? "true" : "false" }
+                ))
+                .toggleStyle(SwitchToggleStyle())
+            default:
+                TextField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            }
             
             if !variable.description.isEmpty {
                 Text(variable.description)

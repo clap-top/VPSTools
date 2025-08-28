@@ -135,7 +135,7 @@
         "sing-box version",
         "cd / && sudo rm -rf /tmp/singbox_install"
       ],
-      "configTemplate": "{\n    \"log\": {\n        \"level\": \"{{log_level}}\",\n        \"timestamp\": true,\n        \"output\": \"stdout\"\n    },\n    \"inbounds\": [\n        {\n            \"type\": \"{{protocol}}\",\n            \"tag\": \"in\",\n            \"listen\": \"0.0.0.0\",\n            \"listen_port\": {{port}},\n            \"password\": \"{{password}}\",\n            \"method\": \"{{method}}\"\n        }\n    ],\n    \"outbounds\": [\n        {\n            \"type\": \"direct\",\n            \"tag\": \"direct\"\n        }\n    ],\n    \"route\": {\n        \"rules\": [\n            {\n                \"geoip\": \"private\",\n                \"outbound\": \"direct\"\n            }\n        ]\n    }\n}",
+      "configTemplate": "{\n    \"log\": {\n        \"level\": \"{{log_level}}\",\n        \"timestamp\": true,\n        \"output\": \"stdout\"\n    },\n    \"inbounds\": [\n        {{inbound_config}}\n    ],\n    \"outbounds\": [\n        {\n            \"type\": \"direct\",\n            \"tag\": \"direct\"\n        },\n        {\n            \"type\": \"block\",\n            \"tag\": \"block\"\n        }\n    ],\n    \"route\": {\n        \"rules\": [\n            {\n                \"geoip\": \"private\",\n                \"outbound\": \"direct\"\n            },\n            {\n                \"geoip\": \"cn\",\n                \"outbound\": \"direct\"\n            }\n        ],\n        \"final\": \"direct\"\n    }\n}",
       "serviceTemplate": "[Unit]\nDescription=sing-box service\nDocumentation=https://sing-box.sagernet.org\nAfter=network.target nss-lookup.target\n\n[Service]\nType=simple\nUser=root\nGroup=root\nCapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE\nAmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE\nExecStart=/usr/local/bin/sing-box run -c /etc/sing-box/config.json\nRestart=on-failure\nRestartSec=1s\nLimitNOFILE=infinity\n\n[Install]\nWantedBy=multi-user.target",
       "variables": [
         {
@@ -145,7 +145,25 @@
           "type": "select",
           "defaultValue": "shadowsocks",
           "required": true,
-          "options": ["shadowsocks", "vmess", "trojan", "hysteria2", "tuic"]
+          "options": [
+            "direct",
+            "mixed",
+            "socks",
+            "http",
+            "shadowsocks",
+            "vmess",
+            "trojan",
+            "naive",
+            "hysteria",
+            "shadowtls",
+            "tuic",
+            "hysteria2",
+            "vless",
+            "anytls",
+            "tun",
+            "redirect",
+            "tproxy"
+          ]
         },
         {
           "id": "9919cda3-a6df-4fb5-b69e-9922655a1b15",
@@ -168,11 +186,581 @@
         {
           "id": "f0589223-5c55-49eb-b17f-77becf7cc0a4",
           "name": "method",
-          "description": "加密方法",
+          "description": "加密方法 (仅 Shadowsocks 使用)",
           "type": "select",
           "defaultValue": "aes-256-gcm",
-          "required": true,
+          "required": false,
           "options": ["aes-256-gcm", "aes-128-gcm", "chacha20-poly1305", "none"]
+        },
+        {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name": "vmess_uuid",
+          "description": "VMess UUID (仅 VMess 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "b2c3d4e5-f6f7-8901-bcde-f23456789012",
+          "name": "vmess_alter_id",
+          "description": "VMess AlterId (仅 VMess 使用)",
+          "type": "number",
+          "defaultValue": "0",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "c3d4e5f6-f7f8-9012-cdef-345678901234",
+          "name": "trojan_uuid",
+          "description": "Trojan UUID (仅 Trojan 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "d4e5f6f7-f8f9-0123-def0-456789012345",
+          "name": "hysteria2_password",
+          "description": "Hysteria2 密码 (仅 Hysteria2 使用)",
+          "type": "password",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "e5f6f7f8-f9f0-1234-ef00-567890123456",
+          "name": "tuic_uuid",
+          "description": "TUIC UUID (仅 TUIC 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f6f7f8f9-f0f1-2345-f000-678901234567",
+          "name": "tuic_password",
+          "description": "TUIC 密码 (仅 TUIC 使用)",
+          "type": "password",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f7f8f9f0-f1f2-3456-0000-789012345678",
+          "name": "vless_uuid",
+          "description": "VLESS UUID (仅 VLESS 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "a7a8a9a0-b1b2-3456-0000-789012345a7a",
+          "name": "vless_flow",
+          "description": "VLESS 子协议 (仅 VLESS 使用)",
+          "type": "select",
+          "defaultValue": "",
+          "required": false,
+          "options": ["", "xtls-rprx-vision"]
+        },
+
+        {
+          "id": "f7f8f9f0-0a0b-3456-0000-789012345f7f",
+          "name": "vless_transport_type",
+          "description": "传输类型 (仅 VLESS 使用)",
+          "type": "select",
+          "defaultValue": "tcp",
+          "required": false,
+          "options": ["tcp", "ws", "grpc", "quic"]
+        },
+        {
+          "id": "0a1a2a3a-1b1c-3456-0000-7890123450a1",
+          "name": "vless_transport_path",
+          "description": "传输路径 (仅 VLESS 使用)",
+          "type": "string",
+          "defaultValue": "/",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "1a2a3a4a-2b2c-3456-0000-7890123451a2",
+          "name": "vless_multiplex_enabled",
+          "description": "启用多路复用 (仅 VLESS 使用)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "7a8a9a0a-8b8c-3456-0000-7890123457a8",
+          "name": "vless_multiplex_padding",
+          "description": "多路复用填充 (仅 VLESS 使用)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "8a9a0a1a-9b9c-3456-0000-7890123458a9",
+          "name": "vless_multiplex_brutal_enabled",
+          "description": "启用多路复用暴力模式 (仅 VLESS 使用)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "9a0a1a2a-0b0c-3456-0000-7890123459a0",
+          "name": "vless_multiplex_brutal_up_mbps",
+          "description": "多路复用暴力模式上行带宽 (仅 VLESS 使用)",
+          "type": "number",
+          "defaultValue": "10000",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "0a1a2a3a-1b1c-3456-0000-7890123450a1",
+          "name": "vless_multiplex_brutal_down_mbps",
+          "description": "多路复用暴力模式下行带宽 (仅 VLESS 使用)",
+          "type": "number",
+          "defaultValue": "10000",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "2a3a4a5a-3b3c-3456-0000-7890123452a3",
+          "name": "tls_enabled",
+          "description": "启用 TLS (通用)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "3a4a5a6a-4b4c-3456-0000-7890123453a4",
+          "name": "tls_server_name",
+          "description": "TLS 服务器名称 (通用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "4a5a6a7a-5b5c-3456-0000-7890123454a5",
+          "name": "tls_insecure",
+          "description": "TLS 不安全模式 (客户端)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "5a6a7a8a-6b6c-3456-0000-7890123455a6",
+          "name": "tls_alpn",
+          "description": "TLS ALPN 协议 (通用)",
+          "type": "string",
+          "defaultValue": "h2,http/1.1",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "6a7a8a9a-7b7c-3456-0000-7890123456a7",
+          "name": "tls_min_version",
+          "description": "TLS 最低版本 (通用)",
+          "type": "select",
+          "defaultValue": "1.2",
+          "required": false,
+          "options": ["1.0", "1.1", "1.2", "1.3"]
+        },
+        {
+          "id": "7a8a9a0a-8b8c-3456-0000-7890123457a8",
+          "name": "tls_max_version",
+          "description": "TLS 最高版本 (通用)",
+          "type": "select",
+          "defaultValue": "1.3",
+          "required": false,
+          "options": ["1.0", "1.1", "1.2", "1.3"]
+        },
+        {
+          "id": "8a9a0a1a-9b9c-3456-0000-7890123458a9",
+          "name": "tls_certificate_path",
+          "description": "TLS 证书路径 (服务端)",
+          "type": "string",
+          "defaultValue": "/etc/ssl/certs/cert.pem",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "9a0a1a2a-0b0c-3456-0000-7890123459a0",
+          "name": "tls_key_path",
+          "description": "TLS 私钥路径 (服务端)",
+          "type": "string",
+          "defaultValue": "/etc/ssl/private/key.pem",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "0a1a2a3a-1b1c-3456-0000-7890123450a1",
+          "name": "tls_acme_enabled",
+          "description": "启用 ACME 自动证书 (服务端)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "1a2a3a4a-2b2c-3456-0000-7890123451a2",
+          "name": "tls_acme_domain",
+          "description": "ACME 域名 (服务端)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "2a3a4a5a-3b3c-3456-0000-7890123452a3",
+          "name": "tls_acme_email",
+          "description": "ACME 邮箱 (服务端)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "3a4a5a6a-4b4c-3456-0000-7890123453a4",
+          "name": "tls_acme_provider",
+          "description": "ACME 提供商 (服务端)",
+          "type": "select",
+          "defaultValue": "letsencrypt",
+          "required": false,
+          "options": ["letsencrypt", "zerossl"]
+        },
+        {
+          "id": "4a5a6a7a-5b5c-3456-0000-7890123454a5",
+          "name": "tls_ech_enabled",
+          "description": "启用 ECH (通用)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "5a6a7a8a-6b6c-3456-0000-7890123455a6",
+          "name": "tls_ech_key_path",
+          "description": "ECH 密钥路径 (服务端)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "6a7a8a9a-7b7c-3456-0000-7890123456a7",
+          "name": "tls_ech_config_path",
+          "description": "ECH 配置路径 (客户端)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "7a8a9a0a-8b8c-3456-0000-7890123457a8",
+          "name": "tls_reality_enabled",
+          "description": "启用 Reality (通用)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "8a9a0a1a-9b9c-3456-0000-7890123458a9",
+          "name": "tls_reality_private_key",
+          "description": "Reality 私钥 (服务端)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "9a0a1a2a-0b0c-3456-0000-7890123459a0",
+          "name": "tls_reality_public_key",
+          "description": "Reality 公钥 (客户端)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "0a1a2a3a-1b1c-3456-0000-7890123450a1",
+          "name": "tls_reality_handshake_server",
+          "description": "Reality 握手服务器 (服务端)",
+          "type": "string",
+          "defaultValue": "google.com",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "1a2a3a4a-2b2c-3456-0000-7890123451a2",
+          "name": "tls_reality_handshake_port",
+          "description": "Reality 握手端口 (服务端)",
+          "type": "number",
+          "defaultValue": "443",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "2a3a4a5a-3b3c-3456-0000-7890123452a3",
+          "name": "tls_reality_short_id",
+          "description": "Reality Short ID (通用)",
+          "type": "string",
+          "defaultValue": "0123456789abcdef",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "3a4a5a6a-4b4c-3456-0000-7890123453a4",
+          "name": "tls_utls_enabled",
+          "description": "启用 uTLS (客户端)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "4a5a6a7a-5b5c-3456-0000-7890123454a5",
+          "name": "tls_utls_fingerprint",
+          "description": "uTLS 指纹 (客户端)",
+          "type": "select",
+          "defaultValue": "chrome",
+          "required": false,
+          "options": [
+            "chrome",
+            "firefox",
+            "edge",
+            "safari",
+            "360",
+            "qq",
+            "ios",
+            "android",
+            "random",
+            "randomized"
+          ]
+        },
+        {
+          "id": "5a6a7a8a-6b6c-3456-0000-7890123455a6",
+          "name": "tls_fragment_enabled",
+          "description": "启用 TLS 分片 (客户端)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "6a7a8a9a-7b7c-3456-0000-7890123456a7",
+          "name": "tls_record_fragment_enabled",
+          "description": "启用 TLS 记录分片 (客户端)",
+          "type": "boolean",
+          "defaultValue": "false",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f8f9f0f1-f2f3-4567-0000-890123456789",
+          "name": "hysteria_password",
+          "description": "Hysteria 密码 (仅 Hysteria 使用)",
+          "type": "password",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f9f0f1f2-f3f4-5678-0000-901234567890",
+          "name": "hysteria_up_mbps",
+          "description": "Hysteria 上行带宽 (Mbps)",
+          "type": "number",
+          "defaultValue": "100",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f0f1f2f3-f4f5-6789-0000-012345678901",
+          "name": "hysteria_down_mbps",
+          "description": "Hysteria 下行带宽 (Mbps)",
+          "type": "number",
+          "defaultValue": "100",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f1f2f3f4-f5f6-7890-0000-123456789012",
+          "name": "shadowtls_password",
+          "description": "ShadowTLS 密码 (仅 ShadowTLS 使用)",
+          "type": "password",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f2f3f4f5-f6f7-8901-0000-234567890123",
+          "name": "shadowtls_server",
+          "description": "ShadowTLS 服务器地址 (仅 ShadowTLS 使用)",
+          "type": "string",
+          "defaultValue": "www.microsoft.com",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f3f4f5f6-f7f8-9012-0000-345678901234",
+          "name": "naive_username",
+          "description": "Naive 用户名 (仅 Naive 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f4f5f6f7-f8f9-0123-0000-456789012345",
+          "name": "naive_password",
+          "description": "Naive 密码 (仅 Naive 使用)",
+          "type": "password",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f5f6f7f8-f9f0-1234-0000-567890123456",
+          "name": "anytls_uuid",
+          "description": "AnyTLS UUID (仅 AnyTLS 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "f6f7f8f9-f0f1-2345-0000-678901234567",
+          "name": "anytls_server",
+          "description": "AnyTLS 服务器地址 (仅 AnyTLS 使用)",
+          "type": "string",
+          "defaultValue": "www.microsoft.com",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "a1a2a3a4-b5b6-7890-cdef-123456789abc",
+          "name": "socks_username",
+          "description": "SOCKS 用户名 (仅 SOCKS 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "b2b3b4b5-c6c7-8901-def0-234567890bcd",
+          "name": "socks_password",
+          "description": "SOCKS 密码 (仅 SOCKS 使用)",
+          "type": "password",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "c3c4c5c6-d7d8-9012-ef01-345678901cde",
+          "name": "http_username",
+          "description": "HTTP 用户名 (仅 HTTP 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "d4d5d6d7-e8e9-0123-f012-456789012def",
+          "name": "http_password",
+          "description": "HTTP 密码 (仅 HTTP 使用)",
+          "type": "password",
+          "defaultValue": null,
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "e5e6e7e8-f9f0-1234-0123-567890123ef0",
+          "name": "tuic_congestion_control",
+          "description": "TUIC 拥塞控制算法 (仅 TUIC 使用)",
+          "type": "select",
+          "defaultValue": "bbr",
+          "required": false,
+          "options": ["bbr", "cubic", "new_reno"]
+        },
+        {
+          "id": "f6f7f8f9-0a0b-2345-1234-678901234f01",
+          "name": "tuic_udp_relay_mode",
+          "description": "TUIC UDP 中继模式 (仅 TUIC 使用)",
+          "type": "select",
+          "defaultValue": "native",
+          "required": false,
+          "options": ["native", "quic"]
+        },
+        {
+          "id": "0a1a2a3a-1b1c-3456-2345-789012345a12",
+          "name": "tuic_max_datagram_size",
+          "description": "TUIC 最大数据报大小 (仅 TUIC 使用)",
+          "type": "number",
+          "defaultValue": "1400",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "1b2b3b4b-2c2d-4567-3456-890123456b23",
+          "name": "tun_interface_name",
+          "description": "Tun 接口名称 (仅 Tun 使用)",
+          "type": "string",
+          "defaultValue": "tun0",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "2c3c4c5c-3d3e-5678-4567-901234567c34",
+          "name": "tun_mtu",
+          "description": "Tun MTU 大小 (仅 Tun 使用)",
+          "type": "number",
+          "defaultValue": "1500",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "3d4d5d6d-4e4f-6789-5678-012345678d45",
+          "name": "tun_auto_route",
+          "description": "Tun 自动路由 (仅 Tun 使用)",
+          "type": "boolean",
+          "defaultValue": "true",
+          "required": false,
+          "options": null
+        },
+        {
+          "id": "4e5e6e7e-5f5f-7890-6789-123456789e56",
+          "name": "redirect_to",
+          "description": "重定向目标地址 (仅 Redirect 使用)",
+          "type": "string",
+          "defaultValue": null,
+          "required": true,
+          "options": null
+        },
+        {
+          "id": "5f6f7f8f-6f6f-8901-7890-234567890f67",
+          "name": "tproxy_mode",
+          "description": "TProxy 模式 (仅 TProxy 使用)",
+          "type": "select",
+          "defaultValue": "redirect",
+          "required": false,
+          "options": ["redirect", "tproxy"]
+        },
+        {
+          "id": "6f7f8f9f-7f7f-9012-8901-345678901f78",
+          "name": "tproxy_network",
+          "description": "TProxy 网络类型 (仅 TProxy 使用)",
+          "type": "select",
+          "defaultValue": "tcp",
+          "required": false,
+          "options": ["tcp", "udp"]
         },
         {
           "id": "0fd9d4e6-c9b5-445f-9485-e61bb30f526c",

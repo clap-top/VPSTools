@@ -70,9 +70,9 @@ class SSHClient {
         port: Int32(vps.port),
         user: vps.username,
         methods: [
-          SSHMethod.comp_cs : SSHConnectionConfig.Security.allowedCiphers,
-          SSHMethod.mac_cs : SSHConnectionConfig.Security.allowedMACs,
-          SSHMethod.kex : SSHConnectionConfig.Security.allowedKeyExchanges
+          SSHMethod.comp_cs : SSHConnectionConfig.Security.allowedCiphers.joined(separator: ","),
+          SSHMethod.mac_cs : SSHConnectionConfig.Security.allowedMACs.joined(separator: ","),
+          SSHMethod.kex : SSHConnectionConfig.Security.allowedKeyExchanges.joined(separator: ",")
         ],
         keepalive: true
       )
@@ -422,7 +422,7 @@ class SSHClient {
 
 // MARK: - SSH Errors
 
-enum SSHError: Error, LocalizedError {
+enum SSHError: Error, LocalizedError, Equatable {
   case connectionFailed
   case authenticationFailed(String)
   case commandFailed(String)
@@ -430,6 +430,23 @@ enum SSHError: Error, LocalizedError {
   case timeout
   case connectionPoolFull
   case reconnectionFailed
+  
+  static func == (lhs: SSHError, rhs: SSHError) -> Bool {
+    switch (lhs, rhs) {
+    case (.connectionFailed, .connectionFailed),
+         (.networkUnreachable, .networkUnreachable),
+         (.timeout, .timeout),
+         (.connectionPoolFull, .connectionPoolFull),
+         (.reconnectionFailed, .reconnectionFailed):
+      return true
+    case (.authenticationFailed(let lhsMessage), .authenticationFailed(let rhsMessage)):
+      return lhsMessage == rhsMessage
+    case (.commandFailed(let lhsCommand), .commandFailed(let rhsCommand)):
+      return lhsCommand == rhsCommand
+    default:
+      return false
+    }
+  }
 
   var errorDescription: String? {
     switch self {
