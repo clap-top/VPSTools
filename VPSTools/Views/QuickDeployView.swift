@@ -1076,18 +1076,76 @@ struct TemplateDetailView: View {
             // 检查 TLS 是否启用
             let tlsEnabled = variables["tls_enabled"] ?? "false"
             if tlsEnabled == "true" {
-                let tlsParams = [
+                // 基础 TLS 参数始终显示
+                let basicTlsParams = [
                     "tls_server_name", "tls_insecure", "tls_alpn", 
-                    "tls_min_version", "tls_max_version", "tls_certificate_path", "tls_key_path",
-                    "tls_acme_enabled", "tls_acme_domain", "tls_acme_email", "tls_acme_provider",
-                    "tls_ech_enabled", "tls_ech_key_path", "tls_ech_config_path",
-                    "tls_reality_enabled", "tls_reality_private_key", "tls_reality_public_key",
-                    "tls_reality_handshake_server", "tls_reality_handshake_port", "tls_reality_short_id",
-                    "tls_utls_enabled", "tls_utls_fingerprint",
-                    "tls_fragment_enabled", "tls_record_fragment_enabled"
+                    "tls_min_version", "tls_max_version", "tls_certificate_path", "tls_key_path"
                 ]
-                if tlsParams.contains(variable.name) {
+                if basicTlsParams.contains(variable.name) {
                     return true
+                }
+                
+                // ACME 相关参数 - 只在 ACME 启用时显示
+                if variable.name == "tls_acme_enabled" {
+                    return true
+                }
+                let acmeEnabled = variables["tls_acme_enabled"] ?? "false"
+                if acmeEnabled == "true" {
+                    let acmeParams = ["tls_acme_domain", "tls_acme_email", "tls_acme_provider"]
+                    if acmeParams.contains(variable.name) {
+                        return true
+                    }
+                }
+                
+                // ECH 相关参数 - 只在 ECH 启用时显示
+                if variable.name == "tls_ech_enabled" {
+                    return true
+                }
+                let echEnabled = variables["tls_ech_enabled"] ?? "false"
+                if echEnabled == "true" {
+                    let echParams = ["tls_ech_key_path", "tls_ech_config_path"]
+                    if echParams.contains(variable.name) {
+                        return true
+                    }
+                }
+                
+                // Reality 相关参数 - 只在 Reality 启用时显示
+                if variable.name == "tls_reality_enabled" {
+                    return true
+                }
+                let realityEnabled = variables["tls_reality_enabled"] ?? "false"
+                if realityEnabled == "true" {
+                    let realityParams = [
+                        "tls_reality_private_key", "tls_reality_public_key",
+                        "tls_reality_handshake_server", "tls_reality_handshake_port", "tls_reality_short_id"
+                    ]
+                    if realityParams.contains(variable.name) {
+                        return true
+                    }
+                }
+                
+                // uTLS 相关参数 - 只在 uTLS 启用时显示 (仅客户端)
+                if variable.name == "tls_utls_enabled" {
+                    return true
+                }
+                let utlsEnabled = variables["tls_utls_enabled"] ?? "false"
+                if utlsEnabled == "true" {
+                    let utlsParams = ["tls_utls_fingerprint"]
+                    if utlsParams.contains(variable.name) {
+                        return true
+                    }
+                }
+                
+                // TLS 分片相关参数 - 只在分片启用时显示 (仅客户端)
+                if variable.name == "tls_fragment_enabled" {
+                    return true
+                }
+                let fragmentEnabled = variables["tls_fragment_enabled"] ?? "false"
+                if fragmentEnabled == "true" {
+                    let fragmentParams = ["tls_record_fragment_enabled"]
+                    if fragmentParams.contains(variable.name) {
+                        return true
+                    }
                 }
             }
         }
@@ -1109,16 +1167,98 @@ struct TemplateDetailView: View {
         case "naive":
             return ["naive_username", "naive_password"].contains(variable.name)
         case "hysteria":
-            return ["hysteria_password", "hysteria_up_mbps", "hysteria_down_mbps"].contains(variable.name)
+            // Hysteria 基础参数始终显示
+            if variable.name == "hysteria_password" {
+                return true
+            }
+            
+            // 带宽参数 - 可选显示
+            let bandwidthParams = ["hysteria_up_mbps", "hysteria_down_mbps"]
+            if bandwidthParams.contains(variable.name) {
+                return true
+            }
+            
+            return false
         case "shadowtls":
             return ["shadowtls_password", "shadowtls_server"].contains(variable.name)
         case "tuic":
-            return ["tuic_uuid", "tuic_password", "tuic_congestion_control", "tuic_udp_relay_mode", "tuic_max_datagram_size"].contains(variable.name)
+            // TUIC 基础参数始终显示
+            let basicTUICParams = ["tuic_uuid", "tuic_password"]
+            if basicTUICParams.contains(variable.name) {
+                return true
+            }
+            
+            // TUIC 高级参数 - 可选显示
+            let advancedTUICParams = ["tuic_congestion_control", "tuic_udp_relay_mode", "tuic_max_datagram_size"]
+            if advancedTUICParams.contains(variable.name) {
+                return true
+            }
+            
+            return false
         case "hysteria2":
             return ["hysteria2_password"].contains(variable.name)
         case "vless":
             // VLESS 基础参数始终显示
-            return ["vless_uuid", "vless_flow", "vless_transport_type", "vless_transport_path", "vless_multiplex_enabled", "vless_multiplex_padding", "vless_multiplex_brutal_enabled", "vless_multiplex_brutal_up_mbps", "vless_multiplex_brutal_down_mbps"].contains(variable.name)
+            let basicVlessParams = ["vless_uuid", "vless_flow", "vless_transport_type"]
+            if basicVlessParams.contains(variable.name) {
+                return true
+            }
+            
+            // 传输相关参数 - 根据传输类型动态显示
+            let transportType = variables["vless_transport_type"] ?? "tcp"
+            
+            // TCP 传输不需要额外参数
+            if transportType == "tcp" {
+                // 只显示基础参数
+            } else {
+                // WebSocket 传输参数
+                if transportType == "ws" {
+                    let wsParams = ["vless_transport_path", "vless_transport_host", "vless_transport_headers", "vless_transport_max_early_data", "vless_transport_use_browser_forwarding"]
+                    if wsParams.contains(variable.name) {
+                        return true
+                    }
+                }
+                
+                // gRPC 传输参数
+                if transportType == "grpc" {
+                    let grpcParams = ["vless_transport_service_name", "vless_transport_idle_timeout", "vless_transport_ping_timeout", "vless_transport_permit_without_stream"]
+                    if grpcParams.contains(variable.name) {
+                        return true
+                    }
+                }
+                
+                // QUIC 传输参数 (目前 QUIC 不需要额外参数)
+                if transportType == "quic" {
+                    // QUIC 目前不需要额外参数
+                }
+            }
+            
+            // 多路复用相关参数 - 只在多路复用启用时显示
+            if variable.name == "vless_multiplex_enabled" {
+                return true
+            }
+            let multiplexEnabled = variables["vless_multiplex_enabled"] ?? "false"
+            if multiplexEnabled == "true" {
+                // 基础多路复用参数
+                let basicMultiplexParams = ["vless_multiplex_padding", "vless_multiplex_protocol", "vless_multiplex_max_connections", "vless_multiplex_min_streams", "vless_multiplex_max_streams"]
+                if basicMultiplexParams.contains(variable.name) {
+                    return true
+                }
+                
+                // Brutal 相关参数 - 只在 Brutal 启用时显示
+                if variable.name == "vless_multiplex_brutal_enabled" {
+                    return true
+                }
+                let brutalEnabled = variables["vless_multiplex_brutal_enabled"] ?? "false"
+                if brutalEnabled == "true" {
+                    let brutalParams = ["vless_multiplex_brutal_up_mbps", "vless_multiplex_brutal_down_mbps"]
+                    if brutalParams.contains(variable.name) {
+                        return true
+                    }
+                }
+            }
+            
+            return false
         case "anytls":
             return ["anytls_uuid", "anytls_server"].contains(variable.name)
         case "tun":

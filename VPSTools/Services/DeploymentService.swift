@@ -1275,8 +1275,20 @@ class DeploymentService: ObservableObject {
         let flow = variables["vless_flow"] ?? ""
         let transportType = variables["vless_transport_type"] ?? "tcp"
         let transportPath = variables["vless_transport_path"] ?? "/"
+        let transportHost = variables["vless_transport_host"] ?? ""
+        let transportHeaders = variables["vless_transport_headers"] ?? ""
+        let transportServiceName = variables["vless_transport_service_name"] ?? "grpc"
+        let transportIdleTimeout = variables["vless_transport_idle_timeout"] ?? "15s"
+        let transportPingTimeout = variables["vless_transport_ping_timeout"] ?? "15s"
+        let transportPermitWithoutStream = variables["vless_transport_permit_without_stream"] ?? "false"
+        let transportMaxEarlyData = variables["vless_transport_max_early_data"] ?? "2048"
+        let transportUseBrowserForwarding = variables["vless_transport_use_browser_forwarding"] ?? "false"
         let multiplexEnabled = variables["vless_multiplex_enabled"] ?? "false"
         let multiplexPadding = variables["vless_multiplex_padding"] ?? "false"
+        let multiplexProtocol = variables["vless_multiplex_protocol"] ?? "h2mux"
+        let multiplexMaxConnections = variables["vless_multiplex_max_connections"] ?? "4"
+        let multiplexMinStreams = variables["vless_multiplex_min_streams"] ?? "4"
+        let multiplexMaxStreams = variables["vless_multiplex_max_streams"] ?? "0"
         let multiplexBrutalEnabled = variables["vless_multiplex_brutal_enabled"] ?? "false"
         let multiplexBrutalUpMbps = variables["vless_multiplex_brutal_up_mbps"] ?? "10000"
         let multiplexBrutalDownMbps = variables["vless_multiplex_brutal_down_mbps"] ?? "10000"
@@ -1321,11 +1333,87 @@ class DeploymentService: ObservableObject {
                 "type": "\(transportType)"
         """
             
-            if transportType == "ws" || transportType == "grpc" {
-                config += """
-                ,
-                "path": "\(transportPath)"
-                """
+            // WebSocket 传输配置
+            if transportType == "ws" {
+                if !transportPath.isEmpty {
+                    config += """
+                    ,
+                    "path": "\(transportPath)"
+                    """
+                }
+                
+                if !transportHost.isEmpty {
+                    config += """
+                    ,
+                    "host": "\(transportHost)"
+                    """
+                }
+                
+                if !transportHeaders.isEmpty {
+                    config += """
+                    ,
+                    "headers": {
+                        "Host": "\(transportHeaders)"
+                    }
+                    """
+                }
+                
+                if let maxEarlyData = Int(transportMaxEarlyData), maxEarlyData > 0 {
+                    config += """
+                    ,
+                    "max_early_data": \(maxEarlyData)
+                    """
+                }
+                
+                if transportUseBrowserForwarding == "true" {
+                    config += """
+                    ,
+                    "use_browser_forwarding": true
+                    """
+                }
+            }
+            
+            // gRPC 传输配置
+            if transportType == "grpc" {
+                if !transportPath.isEmpty {
+                    config += """
+                    ,
+                    "path": "\(transportPath)"
+                    """
+                }
+                
+                if !transportServiceName.isEmpty {
+                    config += """
+                    ,
+                    "service_name": "\(transportServiceName)"
+                    """
+                }
+                
+                if !transportIdleTimeout.isEmpty {
+                    config += """
+                    ,
+                    "idle_timeout": "\(transportIdleTimeout)"
+                    """
+                }
+                
+                if !transportPingTimeout.isEmpty {
+                    config += """
+                    ,
+                    "ping_timeout": "\(transportPingTimeout)"
+                    """
+                }
+                
+                if transportPermitWithoutStream == "true" {
+                    config += """
+                    ,
+                    "permit_without_stream": true
+                    """
+                }
+            }
+            
+            // QUIC 传输配置 (目前不需要额外参数)
+            if transportType == "quic" {
+                // QUIC 目前不需要额外参数
             }
             
             config += "\n            }"
@@ -1344,6 +1432,37 @@ class DeploymentService: ObservableObject {
                 config += """
                 ,
                 "padding": true
+                """
+            }
+            
+            // 添加协议配置（如果不是默认的 h2mux）
+            if multiplexProtocol != "h2mux" {
+                config += """
+                ,
+                "protocol": "\(multiplexProtocol)"
+                """
+            }
+            
+            // 添加连接数配置（如果设置了 max_connections）
+            if let maxConnections = Int(multiplexMaxConnections), maxConnections > 0 {
+                config += """
+                ,
+                "max_connections": \(maxConnections)
+                """
+            }
+            
+            // 添加流数配置（如果设置了 min_streams 或 max_streams）
+            if let minStreams = Int(multiplexMinStreams), minStreams > 0 {
+                config += """
+                ,
+                "min_streams": \(minStreams)
+                """
+            }
+            
+            if let maxStreams = Int(multiplexMaxStreams), maxStreams > 0 {
+                config += """
+                ,
+                "max_streams": \(maxStreams)
                 """
             }
             
