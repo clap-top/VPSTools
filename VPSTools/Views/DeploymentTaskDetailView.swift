@@ -445,24 +445,24 @@ struct DeploymentTaskDetailView: View {
         
         switch protocolType {
         case "vless":
-            if let uuid = task.variables["vless_uuid"], !uuid.isEmpty {
-                params.append(ConfigParameter(key: "vless_uuid", label: "VLESS UUID", value: maskSensitiveValue(uuid)))
+            if let uuid = task.variables["uuid"], !uuid.isEmpty {
+                params.append(ConfigParameter(key: "uuid", label: "VLESS UUID", value: maskSensitiveValue(uuid)))
             }
             if let flow = task.variables["vless_flow"], !flow.isEmpty {
                 params.append(ConfigParameter(key: "vless_flow", label: "VLESS Flow", value: flow))
             }
             
         case "vmess":
-            if let uuid = task.variables["vmess_uuid"], !uuid.isEmpty {
-                params.append(ConfigParameter(key: "vmess_uuid", label: "VMess UUID", value: maskSensitiveValue(uuid)))
+            if let uuid = task.variables["uuid"], !uuid.isEmpty {
+                params.append(ConfigParameter(key: "uuid", label: "VMess UUID", value: maskSensitiveValue(uuid)))
             }
             if let alterId = task.variables["vmess_alter_id"], !alterId.isEmpty {
                 params.append(ConfigParameter(key: "vmess_alter_id", label: "Alter ID", value: alterId))
             }
             
         case "trojan":
-            if let uuid = task.variables["trojan_uuid"], !uuid.isEmpty {
-                params.append(ConfigParameter(key: "trojan_uuid", label: "Trojan UUID", value: maskSensitiveValue(uuid)))
+            if let uuid = task.variables["uuid"], !uuid.isEmpty {
+                params.append(ConfigParameter(key: "uuid", label: "Trojan UUID", value: maskSensitiveValue(uuid)))
             }
             
         case "shadowsocks":
@@ -474,8 +474,8 @@ struct DeploymentTaskDetailView: View {
             }
             
         case "hysteria", "hysteria2":
-            if let password = task.variables["\(protocolType)_password"], !password.isEmpty {
-                params.append(ConfigParameter(key: "\(protocolType)_password", label: "密码", value: maskSensitiveValue(password)))
+            if let password = task.variables["password"], !password.isEmpty {
+                params.append(ConfigParameter(key: "password", label: "密码", value: maskSensitiveValue(password)))
             }
             if let upMbps = task.variables["\(protocolType)_up_mbps"], !upMbps.isEmpty {
                 params.append(ConfigParameter(key: "\(protocolType)_up_mbps", label: "上行带宽", value: "\(upMbps) Mbps"))
@@ -485,19 +485,27 @@ struct DeploymentTaskDetailView: View {
             }
             
         case "tuic":
-            if let uuid = task.variables["tuic_uuid"], !uuid.isEmpty {
-                params.append(ConfigParameter(key: "tuic_uuid", label: "TUIC UUID", value: maskSensitiveValue(uuid)))
+            if let uuid = task.variables["uuid"], !uuid.isEmpty {
+                params.append(ConfigParameter(key: "uuid", label: "TUIC UUID", value: maskSensitiveValue(uuid)))
             }
-            if let password = task.variables["tuic_password"], !password.isEmpty {
-                params.append(ConfigParameter(key: "tuic_password", label: "TUIC 密码", value: maskSensitiveValue(password)))
+            if let password = task.variables["password"], !password.isEmpty {
+                params.append(ConfigParameter(key: "password", label: "密码", value: maskSensitiveValue(password)))
             }
             
         case "naive":
             if let username = task.variables["naive_username"], !username.isEmpty {
                 params.append(ConfigParameter(key: "naive_username", label: "用户名", value: username))
             }
-            if let password = task.variables["naive_password"], !password.isEmpty {
-                params.append(ConfigParameter(key: "naive_password", label: "密码", value: maskSensitiveValue(password)))
+            if let password = task.variables["password"], !password.isEmpty {
+                params.append(ConfigParameter(key: "password", label: "密码", value: maskSensitiveValue(password)))
+            }
+            
+        case "shadowtls":
+            if let password = task.variables["password"], !password.isEmpty {
+                params.append(ConfigParameter(key: "password", label: "密码", value: maskSensitiveValue(password)))
+            }
+            if let server = task.variables["shadowtls_server"], !server.isEmpty {
+                params.append(ConfigParameter(key: "shadowtls_server", label: "服务器地址", value: server))
             }
             
         default:

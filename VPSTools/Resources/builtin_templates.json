@@ -179,10 +179,10 @@
         {
           "id": "695d9fd2-1221-4a95-b51a-bfa1e4cd706d",
           "name": "password",
-          "description": "密码",
+          "description": "密码 (Shadowsocks/TUIC/Hysteria/Hysteria2/Naive/ShadowTLS/SOCKS/HTTP 使用)",
           "type": "password",
           "defaultValue": null,
-          "required": true,
+          "required": false,
           "options": null
         },
         {
@@ -196,8 +196,8 @@
         },
         {
           "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "name": "vmess_uuid",
-          "description": "VMess UUID (仅 VMess 使用)",
+          "name": "uuid",
+          "description": "UUID (VMess/Trojan/VLESS/TUIC/AnyTLS 使用)",
           "type": "string",
           "defaultValue": null,
           "required": false,
@@ -212,51 +212,7 @@
           "required": false,
           "options": null
         },
-        {
-          "id": "c3d4e5f6-f7f8-9012-cdef-345678901234",
-          "name": "trojan_uuid",
-          "description": "Trojan UUID (仅 Trojan 使用)",
-          "type": "string",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "d4e5f6f7-f8f9-0123-def0-456789012345",
-          "name": "hysteria2_password",
-          "description": "Hysteria2 密码 (仅 Hysteria2 使用)",
-          "type": "password",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "e5f6f7f8-f9f0-1234-ef00-567890123456",
-          "name": "tuic_uuid",
-          "description": "TUIC UUID (仅 TUIC 使用)",
-          "type": "string",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "f6f7f8f9-f0f1-2345-f000-678901234567",
-          "name": "tuic_password",
-          "description": "TUIC 密码 (仅 TUIC 使用)",
-          "type": "password",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "f7f8f9f0-f1f2-3456-0000-789012345678",
-          "name": "vless_uuid",
-          "description": "VLESS UUID (仅 VLESS 使用)",
-          "type": "string",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
+
         {
           "id": "a7a8a9a0-b1b2-3456-0000-789012345a7a",
           "name": "vless_flow",
@@ -639,15 +595,7 @@
           "required": false,
           "options": null
         },
-        {
-          "id": "f8f9f0f1-f2f3-4567-0000-890123456789",
-          "name": "hysteria_password",
-          "description": "Hysteria 密码 (仅 Hysteria 使用)",
-          "type": "password",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
+
         {
           "id": "f9f0f1f2-f3f4-5678-0000-901234567890",
           "name": "hysteria_up_mbps",
@@ -666,15 +614,7 @@
           "required": false,
           "options": null
         },
-        {
-          "id": "f1f2f3f4-f5f6-7890-0000-123456789012",
-          "name": "shadowtls_password",
-          "description": "ShadowTLS 密码 (仅 ShadowTLS 使用)",
-          "type": "password",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
+
         {
           "id": "f2f3f4f5-f6f7-8901-0000-234567890123",
           "name": "shadowtls_server",
@@ -693,24 +633,7 @@
           "required": false,
           "options": null
         },
-        {
-          "id": "f4f5f6f7-f8f9-0123-0000-456789012345",
-          "name": "naive_password",
-          "description": "Naive 密码 (仅 Naive 使用)",
-          "type": "password",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "f5f6f7f8-f9f0-1234-0000-567890123456",
-          "name": "anytls_uuid",
-          "description": "AnyTLS UUID (仅 AnyTLS 使用)",
-          "type": "string",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
+
         {
           "id": "f6f7f8f9-f0f1-2345-0000-678901234567",
           "name": "anytls_server",
@@ -729,15 +652,7 @@
           "required": false,
           "options": null
         },
-        {
-          "id": "b2b3b4b5-c6c7-8901-def0-234567890bcd",
-          "name": "socks_password",
-          "description": "SOCKS 密码 (仅 SOCKS 使用)",
-          "type": "password",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
+
         {
           "id": "c3c4c5c6-d7d8-9012-ef01-345678901cde",
           "name": "http_username",
@@ -747,15 +662,7 @@
           "required": false,
           "options": null
         },
-        {
-          "id": "d4d5d6d7-e8e9-0123-f012-456789012def",
-          "name": "http_password",
-          "description": "HTTP 密码 (仅 HTTP 使用)",
-          "type": "password",
-          "defaultValue": null,
-          "required": false,
-          "options": null
-        },
+
         {
           "id": "e5e6e7e8-f9f0-1234-0123-567890123ef0",
           "name": "tuic_congestion_control",

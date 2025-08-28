@@ -1067,8 +1067,8 @@ struct TemplateDetailView: View {
     private func shouldShowVariable(_ variable: TemplateVariable) -> Bool {
         let selectedProtocol = variables["protocol"] ?? "shadowsocks"
         
-        // 通用参数始终显示
-        if ["port", "password", "log_level"].contains(variable.name) {
+        // 通用参数始终显示（除了 password，它需要根据协议判断）
+        if ["port", "log_level"].contains(variable.name) {
             return true
         }
         
@@ -1162,20 +1162,20 @@ struct TemplateDetailView: View {
         case "direct", "mixed":
             return false // 这些协议不需要额外参数
         case "socks":
-            return ["socks_username", "socks_password"].contains(variable.name)
+            return ["socks_username", "password"].contains(variable.name)
         case "http":
-            return ["http_username", "http_password"].contains(variable.name)
+            return ["http_username", "password"].contains(variable.name)
         case "shadowsocks":
-            return ["method"].contains(variable.name)
+            return ["password", "method"].contains(variable.name)
         case "vmess":
-            return ["vmess_uuid", "vmess_alter_id"].contains(variable.name)
+            return ["uuid", "vmess_alter_id"].contains(variable.name)
         case "trojan":
-            return ["trojan_uuid"].contains(variable.name)
+            return ["uuid"].contains(variable.name)
         case "naive":
-            return ["naive_username", "naive_password"].contains(variable.name)
+            return ["naive_username", "password"].contains(variable.name)
         case "hysteria":
             // Hysteria 基础参数始终显示
-            if variable.name == "hysteria_password" {
+            if variable.name == "password" {
                 return true
             }
             
@@ -1187,10 +1187,10 @@ struct TemplateDetailView: View {
             
             return false
         case "shadowtls":
-            return ["shadowtls_password", "shadowtls_server"].contains(variable.name)
+            return ["password", "shadowtls_server"].contains(variable.name)
         case "tuic":
             // TUIC 基础参数始终显示
-            let basicTUICParams = ["tuic_uuid", "tuic_password"]
+            let basicTUICParams = ["uuid", "password"]
             if basicTUICParams.contains(variable.name) {
                 return true
             }
@@ -1203,10 +1203,10 @@ struct TemplateDetailView: View {
             
             return false
         case "hysteria2":
-            return ["hysteria2_password"].contains(variable.name)
+            return ["password"].contains(variable.name)
         case "vless":
             // VLESS 基础参数始终显示
-            let basicVlessParams = ["vless_uuid", "vless_flow", "vless_transport_type"]
+            let basicVlessParams = ["uuid", "vless_flow", "vless_transport_type"]
             if basicVlessParams.contains(variable.name) {
                 return true
             }
@@ -1267,7 +1267,7 @@ struct TemplateDetailView: View {
             
             return false
         case "anytls":
-            return ["anytls_uuid", "anytls_server"].contains(variable.name)
+            return ["uuid", "anytls_server"].contains(variable.name)
         case "tun":
             return ["tun_interface_name", "tun_mtu", "tun_auto_route"].contains(variable.name)
         case "redirect":
@@ -1399,21 +1399,21 @@ struct TemplateDetailView: View {
             }
             
         case "vmess":
-            if variables["vmess_uuid"]?.isEmpty ?? true {
-                variables["vmess_uuid"] = UUID().uuidString
+            if variables["uuid"]?.isEmpty ?? true {
+                variables["uuid"] = UUID().uuidString
             }
             if variables["vmess_alter_id"]?.isEmpty ?? true {
                 variables["vmess_alter_id"] = "0"
             }
             
         case "trojan":
-            if variables["trojan_uuid"]?.isEmpty ?? true {
-                variables["trojan_uuid"] = generateRandomPassword(length: 32)
+            if variables["uuid"]?.isEmpty ?? true {
+                variables["uuid"] = generateRandomPassword(length: 32)
             }
             
         case "vless":
-            if variables["vless_uuid"]?.isEmpty ?? true {
-                variables["vless_uuid"] = UUID().uuidString
+            if variables["uuid"]?.isEmpty ?? true {
+                variables["uuid"] = UUID().uuidString
             }
             if variables["vless_flow"]?.isEmpty ?? true {
                 variables["vless_flow"] = "xtls-rprx-vision"
@@ -1426,8 +1426,8 @@ struct TemplateDetailView: View {
             }
             
         case "hysteria":
-            if variables["hysteria_password"]?.isEmpty ?? true {
-                variables["hysteria_password"] = generateRandomPassword(length: 16)
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
             }
             if variables["hysteria_up_mbps"]?.isEmpty ?? true {
                 variables["hysteria_up_mbps"] = "100"
@@ -1437,16 +1437,16 @@ struct TemplateDetailView: View {
             }
             
         case "hysteria2":
-            if variables["hysteria2_password"]?.isEmpty ?? true {
-                variables["hysteria2_password"] = generateRandomPassword(length: 16)
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
             }
             
         case "tuic":
-            if variables["tuic_uuid"]?.isEmpty ?? true {
-                variables["tuic_uuid"] = UUID().uuidString
+            if variables["uuid"]?.isEmpty ?? true {
+                variables["uuid"] = UUID().uuidString
             }
-            if variables["tuic_password"]?.isEmpty ?? true {
-                variables["tuic_password"] = generateRandomPassword(length: 16)
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
             }
             if variables["tuic_congestion_control"]?.isEmpty ?? true {
                 variables["tuic_congestion_control"] = "bbr"
@@ -1462,21 +1462,21 @@ struct TemplateDetailView: View {
             if variables["naive_username"]?.isEmpty ?? true {
                 variables["naive_username"] = "admin"
             }
-            if variables["naive_password"]?.isEmpty ?? true {
-                variables["naive_password"] = generateRandomPassword(length: 16)
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
             }
             
         case "shadowtls":
-            if variables["shadowtls_password"]?.isEmpty ?? true {
-                variables["shadowtls_password"] = generateRandomPassword(length: 16)
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
             }
             if variables["shadowtls_server"]?.isEmpty ?? true {
                 variables["shadowtls_server"] = "www.microsoft.com"
             }
             
         case "anytls":
-            if variables["anytls_uuid"]?.isEmpty ?? true {
-                variables["anytls_uuid"] = UUID().uuidString
+            if variables["uuid"]?.isEmpty ?? true {
+                variables["uuid"] = UUID().uuidString
             }
             if variables["anytls_server"]?.isEmpty ?? true {
                 variables["anytls_server"] = "www.microsoft.com"
@@ -1486,16 +1486,16 @@ struct TemplateDetailView: View {
             if variables["socks_username"]?.isEmpty ?? true {
                 variables["socks_username"] = "admin"
             }
-            if variables["socks_password"]?.isEmpty ?? true {
-                variables["socks_password"] = generateRandomPassword(length: 16)
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
             }
             
         case "http":
             if variables["http_username"]?.isEmpty ?? true {
                 variables["http_username"] = "admin"
             }
-            if variables["http_password"]?.isEmpty ?? true {
-                variables["http_password"] = generateRandomPassword(length: 16)
+            if variables["password"]?.isEmpty ?? true {
+                variables["password"] = generateRandomPassword(length: 16)
             }
             
         default:
@@ -1548,22 +1548,20 @@ struct TemplateDetailView: View {
     private func clearProtocolSpecificVariables() {
         // 清除所有协议特定的变量，保留通用变量
         let protocolSpecificKeys = [
-            "vmess_uuid", "vmess_alter_id",
-            "trojan_uuid",
-            "vless_uuid", "vless_flow", "vless_transport_type", "vless_transport_path",
+            "uuid", "vmess_alter_id",
+            "vless_flow", "vless_transport_type", "vless_transport_path",
             "vless_transport_host", "vless_transport_headers", "vless_transport_service_name",
             "vless_transport_idle_timeout", "vless_transport_ping_timeout", "vless_transport_permit_without_stream",
             "vless_transport_max_early_data", "vless_transport_use_browser_forwarding",
             "vless_multiplex_enabled", "vless_multiplex_padding", "vless_multiplex_brutal_enabled",
             "vless_multiplex_brutal_up_mbps", "vless_multiplex_brutal_down_mbps",
-            "hysteria_password", "hysteria_up_mbps", "hysteria_down_mbps",
-            "hysteria2_password",
-            "tuic_uuid", "tuic_password", "tuic_congestion_control", "tuic_udp_relay_mode", "tuic_max_datagram_size",
-            "naive_username", "naive_password",
-            "shadowtls_password", "shadowtls_server",
-            "anytls_uuid", "anytls_server",
-            "socks_username", "socks_password",
-            "http_username", "http_password",
+            "hysteria_up_mbps", "hysteria_down_mbps",
+            "tuic_congestion_control", "tuic_udp_relay_mode", "tuic_max_datagram_size",
+            "naive_username",
+            "shadowtls_server",
+            "anytls_server",
+            "socks_username",
+            "http_username",
             "password", "method"
         ]
         

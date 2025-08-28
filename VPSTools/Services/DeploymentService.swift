@@ -1078,15 +1078,15 @@ class DeploymentService: ObservableObject {
             "socks": [],
             "http": [],
             "shadowsocks": ["password", "method"],
-            "vmess": ["vmess_uuid"],
-            "trojan": ["trojan_uuid"],
-            "naive": ["naive_username", "naive_password"],
-            "hysteria": ["hysteria_password"],
-            "hysteria2": ["hysteria2_password"],
-            "shadowtls": ["shadowtls_password", "shadowtls_server"],
-            "tuic": ["tuic_uuid", "tuic_password"],
-            "vless": ["vless_uuid"],
-            "anytls": ["anytls_uuid", "anytls_server"],
+            "vmess": ["uuid"],
+            "trojan": ["uuid"],
+            "naive": ["naive_username", "password"],
+            "hysteria": ["password"],
+            "hysteria2": ["password"],
+            "shadowtls": ["password", "shadowtls_server"],
+            "tuic": ["uuid", "password"],
+            "vless": ["uuid"],
+            "anytls": ["uuid", "anytls_server"],
             "tun": [],
             "redirect": ["redirect_to"],
             "tproxy": []
@@ -1386,7 +1386,7 @@ class DeploymentService: ObservableObject {
     
     /// 生成 VMess 配置
     private func generateVMessConfig(variables: [String: String], port: String) -> String {
-        let uuid = variables["vmess_uuid"] ?? ""
+        let uuid = variables["uuid"] ?? ""
         let alterId = variables["vmess_alter_id"] ?? "0"
         
         var config = """
@@ -1417,7 +1417,7 @@ class DeploymentService: ObservableObject {
     
     /// 生成 Trojan 配置
     private func generateTrojanConfig(variables: [String: String], port: String) -> String {
-        let uuid = variables["trojan_uuid"] ?? ""
+        let uuid = variables["uuid"] ?? ""
         
         var config = """
         {
@@ -1471,8 +1471,8 @@ class DeploymentService: ObservableObject {
     
     /// 生成 TUIC 配置
     private func generateTUICConfig(variables: [String: String], port: String) -> String {
-        let uuid = variables["tuic_uuid"] ?? ""
-        let password = variables["tuic_password"] ?? ""
+        let uuid = variables["uuid"] ?? ""
+        let password = variables["password"] ?? ""
         let congestionControl = variables["tuic_congestion_control"] ?? "bbr"
         let udpRelayMode = variables["tuic_udp_relay_mode"] ?? "native"
         let maxDatagramSize = variables["tuic_max_datagram_size"] ?? "1400"
@@ -1498,7 +1498,7 @@ class DeploymentService: ObservableObject {
     
     /// 生成 VLESS 配置
     private func generateVLESSConfig(variables: [String: String], port: String) -> String {
-        let uuid = variables["vless_uuid"] ?? ""
+        let uuid = variables["uuid"] ?? ""
         let flow = variables["vless_flow"] ?? ""
         let transportType = variables["vless_transport_type"] ?? "tcp"
         let transportPath = variables["vless_transport_path"] ?? "/"
@@ -1679,7 +1679,7 @@ class DeploymentService: ObservableObject {
     
     /// 生成 Hysteria 配置
     private func generateHysteriaConfig(variables: [String: String], port: String) -> String {
-        let password = variables["hysteria_password"] ?? ""
+        let password = variables["password"] ?? ""
         let upMbps = variables["hysteria_up_mbps"] ?? "100"
         let downMbps = variables["hysteria_down_mbps"] ?? "100"
         
@@ -1708,7 +1708,7 @@ class DeploymentService: ObservableObject {
     
     /// 生成 ShadowTLS 配置
     private func generateShadowTLSConfig(variables: [String: String], port: String) -> String {
-        let password = variables["shadowtls_password"] ?? ""
+        let password = variables["password"] ?? ""
         let server = variables["shadowtls_server"] ?? "www.microsoft.com"
         
         return """
@@ -1726,7 +1726,7 @@ class DeploymentService: ObservableObject {
     /// 生成 Naive 配置
     private func generateNaiveConfig(variables: [String: String], port: String) -> String {
         let username = variables["naive_username"] ?? ""
-        let password = variables["naive_password"] ?? ""
+        let password = variables["password"] ?? ""
         
         return """
         {
@@ -1746,7 +1746,7 @@ class DeploymentService: ObservableObject {
     
     /// 生成 AnyTLS 配置
     private func generateAnyTLSConfig(variables: [String: String], port: String) -> String {
-        let uuid = variables["anytls_uuid"] ?? ""
+        let uuid = variables["uuid"] ?? ""
         let server = variables["anytls_server"] ?? "www.microsoft.com"
         
         var config = """
@@ -2922,7 +2922,7 @@ extension DeploymentService {
     /// 生成 SOCKS 配置
     private func generateSOCKSConfig(variables: [String: String], port: String) -> String {
         let username = variables["socks_username"] ?? ""
-        let password = variables["socks_password"] ?? ""
+        let password = variables["password"] ?? ""
         
         var config = """
         {
@@ -2951,7 +2951,7 @@ extension DeploymentService {
     /// 生成 HTTP 配置
     private func generateHTTPConfig(variables: [String: String], port: String) -> String {
         let username = variables["http_username"] ?? ""
-        let password = variables["http_password"] ?? ""
+        let password = variables["password"] ?? ""
         
         var config = """
         {

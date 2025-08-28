@@ -111,7 +111,7 @@ struct DeploymentExecutionView: View {
             if let port = variables["port"] {
                 keyParams.append(("port", "端口", port))
             }
-            if let uuid = variables["vless_uuid"] ?? variables["vmess_uuid"] ?? variables["trojan_uuid"] {
+            if let uuid = variables["uuid"] {
                 keyParams.append(("uuid", "UUID", String(uuid.prefix(8)) + "..."))
             }
             if let password = variables["password"] ?? variables["hysteria_password"] ?? variables["hysteria2_password"] {
