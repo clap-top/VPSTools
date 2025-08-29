@@ -61,6 +61,18 @@ class ClientConfigGenerator: ObservableObject {
         return clientConfig
     }
     
+    /// 删除客户端配置
+    func deleteConfiguration(_ configId: UUID) {
+        clientConfigurations.removeAll { $0.id == configId }
+        saveClientConfigurations()
+    }
+    
+    /// 批量删除客户端配置
+    func deleteConfigurations(_ configIds: [UUID]) {
+        clientConfigurations.removeAll { configIds.contains($0.id) }
+        saveClientConfigurations()
+    }
+    
     /// 生成指定格式的客户端配置
     func generateConfigContent(
         for clientConfig: ClientConfiguration,

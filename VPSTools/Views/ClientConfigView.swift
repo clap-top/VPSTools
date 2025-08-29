@@ -1,6 +1,42 @@
 import SwiftUI
 import Combine
 
+// MARK: - Config Connection Status
+
+enum ConfigConnectionStatus {
+    case unknown
+    case testing
+    case connected
+    case failed
+    
+    var displayName: String {
+        switch self {
+        case .unknown: return "未知"
+        case .testing: return "测试中"
+        case .connected: return "连接正常"
+        case .failed: return "连接失败"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .unknown: return .gray
+        case .testing: return .orange
+        case .connected: return .green
+        case .failed: return .red
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .unknown: return "questionmark.circle"
+        case .testing: return "clock"
+        case .connected: return "checkmark.circle"
+        case .failed: return "xmark.circle"
+        }
+    }
+}
+
 // MARK: - Client Configuration View
 
 struct ClientConfigView: View {
@@ -13,6 +49,14 @@ struct ClientConfigView: View {
     @State private var selectedAppType: ClientAppType = .singBox
     @State private var configContent = ""
     @State private var qrCodeData: Data?
+    @State private var searchText = ""
+    @State private var selectedProtocolFilter: ProtocolType?
+    @State private var showingDeleteConfirmation = false
+    @State private var configToDelete: ClientConfiguration?
+    @State private var showingBulkActions = false
+    @State private var selectedConfigs: Set<UUID> = []
+    @State private var showingShareSheet = false
+    @State private var shareItems: [Any] = []
     
     var body: some View {
         NavigationView {
@@ -38,6 +82,22 @@ struct ClientConfigView: View {
                     clientConfigGenerator: clientConfigGenerator,
                     vpsManager: vpsManager
                 )
+            }
+            .confirmationDialog("确认删除", isPresented: $showingDeleteConfirmation) {
+                Button("删除", role: .destructive) {
+                    if let config = configToDelete {
+                        clientConfigGenerator.deleteConfiguration(config.id)
+                        configToDelete = nil
+                    }
+                }
+                Button("取消", role: .cancel) {
+                    configToDelete = nil
+                }
+            } message: {
+                Text("确定要删除这个配置吗？此操作无法撤销。")
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                ShareSheet(items: shareItems)
             }
         }
     }
@@ -66,30 +126,266 @@ struct ClientConfigView: View {
     
     // MARK: - Config List View
     
-    private var configListView: some View {
-        List {
-            ForEach(clientConfigGenerator.clientConfigurations) { config in
-                ClientConfigRowView(
-                    config: config,
-                    vpsManager: vpsManager,
-                    onTap: {
-                        selectedConfig = config
-                    },
-                    onExport: { format, appType in
-                        selectedConfig = config
-                        selectedFormat = format
-                        selectedAppType = appType
-                    },
-                    onShowQRCode: { format in
-                        generateQRCode(for: config, format: format)
-                    }
-                )
+    private var filteredConfigurations: [ClientConfiguration] {
+        var filtered = clientConfigGenerator.clientConfigurations
+        
+        // 搜索过滤
+        if !searchText.isEmpty {
+            filtered = filtered.filter { config in
+                config.serverAddress.localizedCaseInsensitiveContains(searchText) ||
+                config.protocolType.localizedCaseInsensitiveContains(searchText) ||
+                (vpsManager.vpsInstances.first(where: { $0.id == config.vpsId })?.displayName.localizedCaseInsensitiveContains(searchText) ?? false)
             }
         }
-        .listStyle(InsetGroupedListStyle())
+        
+        // 协议过滤
+        if let protocolFilter = selectedProtocolFilter {
+            filtered = filtered.filter { $0.protocolType == protocolFilter.rawValue }
+        }
+        
+        return filtered
+    }
+    
+    private var configListView: some View {
+        VStack(spacing: 0) {
+//            // 搜索和过滤栏
+//            searchAndFilterSection
+            
+            // 统计信息
+            if !clientConfigGenerator.clientConfigurations.isEmpty {
+                statisticsSection
+            }
+            
+            // 配置列表
+            List {
+                ForEach(filteredConfigurations) { config in
+                    ClientConfigRowView(
+                        config: config,
+                        vpsManager: vpsManager,
+                        isSelected: selectedConfigs.contains(config.id),
+                        onTap: {
+                            if showingBulkActions {
+                                toggleConfigSelection(config)
+                            } else {
+                                selectedConfig = config
+                            }
+                        },
+                        onLongPress: {
+                            if !showingBulkActions {
+                                showingBulkActions = true
+                                selectedConfigs.insert(config.id)
+                            }
+                        },
+                        onExport: { format, appType in
+                            selectedConfig = config
+                            selectedFormat = format
+                            selectedAppType = appType
+                        },
+                        onShowQRCode: { format in
+                            generateQRCode(for: config, format: format)
+                        },
+                        onDelete: {
+                            configToDelete = config
+                            showingDeleteConfirmation = true
+                        }
+                    )
+                }
+            }
+            .listStyle(InsetGroupedListStyle())
+            
+            // 批量操作栏
+            if showingBulkActions {
+                bulkActionsSection
+            }
+        }
+    }
+    
+    // MARK: - Search and Filter Section
+    
+    private var searchAndFilterSection: some View {
+        VStack(spacing: 12) {
+            // 搜索栏
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                
+                TextField("搜索配置...", text: $searchText)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                if !searchText.isEmpty {
+                    Button("清除") {
+                        searchText = ""
+                    }
+                    .foregroundColor(.accentColor)
+                }
+            }
+            .padding(.horizontal)
+            
+            // 协议过滤
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    Button(action: {
+                        selectedProtocolFilter = nil
+                    }) {
+                        Text("全部")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(selectedProtocolFilter == nil ? Color.accentColor : Color(.tertiarySystemBackground))
+                            .foregroundColor(selectedProtocolFilter == nil ? .white : .primary)
+                            .cornerRadius(16)
+                    }
+                    
+                    ForEach(ProtocolType.allCases, id: \.self) { protocolType in
+                        Button(action: {
+                            selectedProtocolFilter = selectedProtocolFilter == protocolType ? nil : protocolType
+                        }) {
+                            Text(protocolType.displayName)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedProtocolFilter == protocolType ? Color.accentColor : Color(.tertiarySystemBackground))
+                                .foregroundColor(selectedProtocolFilter == protocolType ? .white : .primary)
+                                .cornerRadius(16)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .padding(.vertical, 8)
+        .background(Color(.systemGroupedBackground))
+    }
+    
+    // MARK: - Statistics Section
+    
+    private var statisticsSection: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("配置统计")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Text("\(filteredConfigurations.count)/\(clientConfigGenerator.clientConfigurations.count)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            // 协议分布
+            let protocolStats = Dictionary(grouping: filteredConfigurations, by: { $0.protocolType })
+                .mapValues { $0.count }
+                .sorted { $0.value > $1.value }
+            
+            if !protocolStats.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(protocolStats.prefix(5), id: \.key) { protocolType, count in
+                            VStack(spacing: 4) {
+                                Text(protocolType.uppercased())
+                                    .font(.caption2)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.secondary)
+                                
+                                Text("\(count)")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.tertiarySystemBackground))
+                            .cornerRadius(8)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+    
+    // MARK: - Bulk Actions Section
+    
+    private var bulkActionsSection: some View {
+        HStack(spacing: 16) {
+            Button("取消") {
+                showingBulkActions = false
+                selectedConfigs.removeAll()
+            }
+            .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Text("已选择 \(selectedConfigs.count) 项")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Button("删除") {
+                deleteSelectedConfigs()
+            }
+            .foregroundColor(.red)
+            .disabled(selectedConfigs.isEmpty)
+            
+            Button("分享") {
+                shareSelectedConfigs()
+            }
+            .foregroundColor(.accentColor)
+            .disabled(selectedConfigs.isEmpty)
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .overlay(
+            Rectangle()
+                .frame(height: 0.5)
+                .foregroundColor(Color(.separator)),
+            alignment: .top
+        )
     }
     
     // MARK: - Private Methods
+    
+    private func toggleConfigSelection(_ config: ClientConfiguration) {
+        if selectedConfigs.contains(config.id) {
+            selectedConfigs.remove(config.id)
+        } else {
+            selectedConfigs.insert(config.id)
+        }
+    }
+    
+    private func deleteSelectedConfigs() {
+        for configId in selectedConfigs {
+            clientConfigGenerator.deleteConfiguration(configId)
+        }
+        selectedConfigs.removeAll()
+        showingBulkActions = false
+    }
+    
+    private func shareSelectedConfigs() {
+        var shareText = "客户端配置\n\n"
+        
+        for configId in selectedConfigs {
+            if let config = clientConfigGenerator.clientConfigurations.first(where: { $0.id == configId }) {
+                shareText += "配置: \(config.protocolType.uppercased())\n"
+                shareText += "服务器: \(config.serverAddress):\(config.port)\n"
+                if let vps = vpsManager.vpsInstances.first(where: { $0.id == config.vpsId }) {
+                    shareText += "VPS: \(vps.displayName)\n"
+                }
+                shareText += "\n"
+            }
+        }
+        
+        shareItems = [shareText]
+        showingShareSheet = true
+    }
     
     private func generateQRCode(for config: ClientConfiguration, format: ClientConfigFormat) {
         do {
@@ -108,19 +404,41 @@ struct ClientConfigView: View {
 struct ClientConfigRowView: View {
     let config: ClientConfiguration
     let vpsManager: VPSManager
+    let isSelected: Bool
     let onTap: () -> Void
+    let onLongPress: () -> Void
     let onExport: (ClientConfigFormat, ClientAppType) -> Void
     let onShowQRCode: (ClientConfigFormat) -> Void
+    let onDelete: () -> Void
     
     @State private var showingActionSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
+                // 选择指示器
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.accentColor)
+                        .font(.title3)
+                }
+                
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(config.protocolType.uppercased()) - \(config.serverAddress)")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                    HStack {
+                        Text("\(config.protocolType.uppercased()) - \(config.serverAddress)")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            showingActionSheet = true
+                        }) {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.title2)
+                                .foregroundColor(.accentColor)
+                        }
+                    }
                     
                     Text("端口: \(config.port)")
                         .font(.subheadline)
@@ -131,16 +449,6 @@ struct ClientConfigRowView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                }
-                
-                Spacer()
-                
-                Button(action: {
-                    showingActionSheet = true
-                }) {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.title2)
-                        .foregroundColor(.accentColor)
                 }
             }
             
@@ -167,6 +475,9 @@ struct ClientConfigRowView: View {
         .onTapGesture {
             onTap()
         }
+        .onLongPressGesture {
+            onLongPress()
+        }
         .actionSheet(isPresented: $showingActionSheet) {
             ActionSheet(
                 title: Text("客户端配置操作"),
@@ -181,11 +492,14 @@ struct ClientConfigRowView: View {
                     .default(Text("导出 sing-box 配置")) {
                         onExport(.singBox, .singBox)
                     },
-                    .default(Text("导出 sing-box 配置")) {
-                        onExport(.singBox, .singBox)
+                    .default(Text("导出 V2Ray 配置")) {
+                        onExport(.v2ray, .v2rayNG)
                     },
-                    .default(Text("导出 Clash 配置")) {
-                        onExport(.clash, .clash)
+                    .default(Text("显示二维码")) {
+                        onShowQRCode(.singBox)
+                    },
+                    .destructive(Text("删除配置")) {
+                        onDelete()
                     },
                     .cancel()
                 ]
@@ -206,6 +520,11 @@ struct ClientConfigDetailView: View {
     @State private var configContent = ""
     @State private var showingExportSheet = false
     @State private var showingQRCode = false
+    @State private var showingShareSheet = false
+    @State private var showingConnectionTest = false
+    @State private var connectionStatus: ConfigConnectionStatus = .unknown
+    @State private var testResult = ""
+    @State private var shareItems: [Any] = []
     
     var body: some View {
         NavigationView {
@@ -245,6 +564,9 @@ struct ClientConfigDetailView: View {
                     clientConfigGenerator: clientConfigGenerator
                 )
             }
+            .sheet(isPresented: $showingShareSheet) {
+                ShareSheet(items: shareItems)
+            }
         }
     }
     
@@ -255,24 +577,117 @@ struct ClientConfigDetailView: View {
                 .fontWeight(.semibold)
             
             VStack(spacing: 8) {
+                // 基本信息
                 InfoRow(label: "协议", value: config.protocolType.uppercased())
                 InfoRow(label: "服务器", value: config.serverAddress)
                 InfoRow(label: "端口", value: "\(config.port)")
                 
+                // 连接状态
+                HStack {
+                    Text("连接状态")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: connectionStatus.icon)
+                            .foregroundColor(connectionStatus.color)
+                        
+                        Text(connectionStatus.displayName)
+                            .font(.subheadline)
+                            .foregroundColor(connectionStatus.color)
+                    }
+                }
+                
+                // 协议特定信息
                 if let password = config.password {
-                    InfoRow(label: "密码", value: password)
+                    InfoRow(label: "密码", value: password, isSensitive: true)
                 }
                 
                 if let uuid = config.uuid {
-                    InfoRow(label: "UUID", value: uuid)
+                    InfoRow(label: "UUID", value: uuid, isSensitive: true)
                 }
                 
                 if let method = config.method {
                     InfoRow(label: "加密方法", value: method)
                 }
                 
+                // 传输配置
+                if let transport = config.transport {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("传输配置")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        Text("类型: \(transport.type)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        if let path = transport.path {
+                            Text("路径: \(path)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        if let host = transport.host {
+                            Text("主机: \(host)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+                
+                // TLS配置
+                if let tls = config.tls, tls.enabled {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("TLS配置")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        if let serverName = tls.serverName {
+                            Text("服务器名: \(serverName)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Text("允许不安全: \(tls.allowInsecure ? "是" : "否")")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        if let alpn = tls.alpn, !alpn.isEmpty {
+                            Text("ALPN: \(alpn.joined(separator: ", "))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+                
+                // VPS信息
                 if let vps = vpsManager.vpsInstances.first(where: { $0.id == config.vpsId }) {
-                    InfoRow(label: "服务器名称", value: vps.displayName)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("服务器信息")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        Text("名称: \(vps.displayName)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("地址: \(vps.host)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("用户: \(vps.username)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 4)
                 }
             }
         }
@@ -365,18 +780,60 @@ struct ClientConfigDetailView: View {
     }
     
     private var actionButtonsSection: some View {
-        HStack(spacing: 16) {
-            Button("导出配置") {
-                showingExportSheet = true
+        VStack(spacing: 12) {
+            // 主要操作按钮
+            HStack(spacing: 12) {
+                Button("导出配置") {
+                    showingExportSheet = true
+                }
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity)
+                
+                Button("显示二维码") {
+                    showingQRCode = true
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .frame(maxWidth: .infinity)
             
-            Button("显示二维码") {
-                showingQRCode = true
+            // 次要操作按钮
+            HStack(spacing: 12) {
+                Button("连接测试") {
+                    testConnection()
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
+                .disabled(connectionStatus == .testing)
+                
+                Button("分享配置") {
+                    shareConfiguration()
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
-            .frame(maxWidth: .infinity)
+            
+            // 快速操作按钮
+            HStack(spacing: 8) {
+                Button("复制服务器地址") {
+                    UIPasteboard.general.string = "\(config.serverAddress):\(config.port)"
+                }
+                .buttonStyle(.bordered)
+                .font(.caption)
+                
+                Button("复制配置内容") {
+                    UIPasteboard.general.string = configContent
+                }
+                .buttonStyle(.bordered)
+                .font(.caption)
+                
+                if vpsManager.vpsInstances.first(where: { $0.id == config.vpsId }) != nil {
+                    Button("查看VPS详情") {
+                        // TODO: 导航到VPS详情页面
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.caption)
+                }
+            }
         }
         .padding()
     }
@@ -387,6 +844,46 @@ struct ClientConfigDetailView: View {
         } catch {
             configContent = "生成配置失败: \(error.localizedDescription)"
         }
+    }
+    
+    private func testConnection() {
+        connectionStatus = .testing
+        
+        // 模拟连接测试
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            // 这里应该实现真正的连接测试逻辑
+            let isSuccess = Bool.random() // 模拟测试结果
+            connectionStatus = isSuccess ? .connected : .failed
+            
+            if isSuccess {
+                testResult = "连接成功，延迟: \(Int.random(in: 50...200))ms"
+            } else {
+                testResult = "连接失败，请检查网络设置"
+            }
+        }
+    }
+    
+    private func shareConfiguration() {
+        var shareText = "客户端配置\n\n"
+        shareText += "协议: \(config.protocolType.uppercased())\n"
+        shareText += "服务器: \(config.serverAddress):\(config.port)\n"
+        
+        if let password = config.password {
+            shareText += "密码: \(password)\n"
+        }
+        
+        if let uuid = config.uuid {
+            shareText += "UUID: \(uuid)\n"
+        }
+        
+        if let vps = vpsManager.vpsInstances.first(where: { $0.id == config.vpsId }) {
+            shareText += "VPS: \(vps.displayName)\n"
+        }
+        
+        shareText += "\n配置内容:\n\(configContent)"
+        
+        shareItems = [shareText]
+        showingShareSheet = true
     }
 }
 

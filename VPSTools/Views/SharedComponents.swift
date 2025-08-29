@@ -5,6 +5,15 @@ import SwiftUI
 struct InfoRow: View {
     let label: String
     let value: String
+    let isSensitive: Bool
+    
+    init(label: String, value: String, isSensitive: Bool = false) {
+        self.label = label
+        self.value = value
+        self.isSensitive = isSensitive
+    }
+    
+    @State private var showSensitiveValue = false
     
     var body: some View {
         HStack {
@@ -12,9 +21,33 @@ struct InfoRow: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             Spacer()
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
+            
+            if isSensitive {
+                HStack(spacing: 4) {
+                    if showSensitiveValue {
+                        Text(value)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    } else {
+                        Text(String(repeating: "•", count: min(value.count, 8)))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Button(action: {
+                        showSensitiveValue.toggle()
+                    }) {
+                        Image(systemName: showSensitiveValue ? "eye.slash" : "eye")
+                            .font(.caption)
+                            .foregroundColor(.accentColor)
+                    }
+                }
+            } else {
+                Text(value)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+            }
         }
     }
 }
