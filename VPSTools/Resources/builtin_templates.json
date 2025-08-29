@@ -124,7 +124,7 @@
       "category": "网络服务",
       "commands": [
         "apt update",
-        "apt install -y apt-transport-https ca-certificates curl lsof wget tar",
+        "apt install -y apt-transport-https ca-certificates curl lsof wget tar openssl",
         "mkdir -p /tmp/singbox_install",
         "cd /tmp/singbox_install && curl -L -o sing-box.tar.gz \"{{download_url}}\"",
         "cd /tmp/singbox_install && tar -xzf sing-box.tar.gz",
@@ -134,6 +134,9 @@
         "sudo mkdir -p /etc/sing-box",
         "sudo mkdir -p /var/log/sing-box",
         "sudo mkdir -p /var/lib/sing-box",
+        "sudo mkdir -p /etc/ssl/certs",
+        "sudo mkdir -p /etc/ssl/private",
+        "{{generate_self_signed_cert}}",
         "sing-box version",
         "cd / && sudo rm -rf /tmp/singbox_install"
       ],
@@ -203,8 +206,9 @@
           "required": false,
           "options": null
         },
+
         {
-          "id": "b2c3d4e5-f6f7-8901-bcde-f23456789012",
+          "id": "d4e5f6a7-b8c9-0123-def0-a45678901234",
           "name": "vmess_alter_id",
           "description": "VMess AlterId (仅 VMess 使用)",
           "type": "number",
@@ -332,7 +336,7 @@
           "options": null
         },
         {
-          "id": "8a9a0a1a-9b9c-3456-0000-7890123458a9",
+          "id": "b0b1b2b3-1c1d-3456-0000-789012345b0b",
           "name": "vless_multiplex_brutal_enabled",
           "description": "启用多路复用暴力模式 (仅 VLESS 使用)",
           "type": "boolean",
@@ -350,7 +354,7 @@
           "options": null
         },
         {
-          "id": "0a1a2a3a-1b1c-3456-0000-7890123450a1",
+          "id": "d0d1d2d3-3e3f-3456-0000-789012345d0d",
           "name": "vless_multiplex_brutal_down_mbps",
           "description": "多路复用暴力模式下行带宽 (仅 VLESS 使用)",
           "type": "number",
@@ -405,7 +409,7 @@
           "options": ["1.0", "1.1", "1.2", "1.3"]
         },
         {
-          "id": "7a8a9a0a-8b8c-3456-0000-7890123457a8",
+          "id": "a0a1a2a3-b4c5-3456-def0-a45678901234",
           "name": "tls_max_version",
           "description": "TLS 最高版本 (通用)",
           "type": "select",
@@ -415,6 +419,15 @@
         },
         {
           "id": "8a9a0a1a-9b9c-3456-0000-7890123458a9",
+          "name": "tls_certificate_method",
+          "description": "TLS 证书配置方式",
+          "type": "select",
+          "defaultValue": "custom_path",
+          "required": false,
+          "options": ["custom_path", "acme", "self_signed"]
+        },
+        {
+          "id": "9a0a1a2a-0b0c-3456-0000-7890123459a0",
           "name": "tls_certificate_path",
           "description": "TLS 证书路径 (服务端)",
           "type": "string",
@@ -423,7 +436,7 @@
           "options": null
         },
         {
-          "id": "9a0a1a2a-0b0c-3456-0000-7890123459a0",
+          "id": "a0a1a2a3-0c0d-3456-0000-789012345a0a",
           "name": "tls_key_path",
           "description": "TLS 私钥路径 (服务端)",
           "type": "string",
@@ -431,17 +444,9 @@
           "required": false,
           "options": null
         },
+
         {
-          "id": "0a1a2a3a-1b1c-3456-0000-7890123450a1",
-          "name": "tls_acme_enabled",
-          "description": "启用 ACME 自动证书 (服务端)",
-          "type": "boolean",
-          "defaultValue": "false",
-          "required": false,
-          "options": null
-        },
-        {
-          "id": "1a2a3a4a-2b2c-3456-0000-7890123451a2",
+          "id": "b0b1b2b3-c4d5-3456-def0-a45678901234",
           "name": "tls_acme_domain",
           "description": "ACME 域名 (服务端)",
           "type": "string",
@@ -450,7 +455,7 @@
           "options": null
         },
         {
-          "id": "2a3a4a5a-3b3c-3456-0000-7890123452a3",
+          "id": "c0c1c2c3-d4e5-3456-def0-a45678901234",
           "name": "tls_acme_email",
           "description": "ACME 邮箱 (服务端)",
           "type": "string",
@@ -459,7 +464,7 @@
           "options": null
         },
         {
-          "id": "3a4a5a6a-4b4c-3456-0000-7890123453a4",
+          "id": "d0d1d2d3-e4f5-3456-def0-a45678901234",
           "name": "tls_acme_provider",
           "description": "ACME 提供商 (服务端)",
           "type": "select",
@@ -468,7 +473,7 @@
           "options": ["letsencrypt", "zerossl"]
         },
         {
-          "id": "4a5a6a7a-5b5c-3456-0000-7890123454a5",
+          "id": "e0e1e2e3-f4a5-3456-def0-a45678901234",
           "name": "tls_ech_enabled",
           "description": "启用 ECH (通用)",
           "type": "boolean",
@@ -477,7 +482,7 @@
           "options": null
         },
         {
-          "id": "5a6a7a8a-6b6c-3456-0000-7890123455a6",
+          "id": "f0f1f2f3-a4b5-3456-def0-a45678901234",
           "name": "tls_ech_key_path",
           "description": "ECH 密钥路径 (服务端)",
           "type": "string",
@@ -486,7 +491,7 @@
           "options": null
         },
         {
-          "id": "6a7a8a9a-7b7c-3456-0000-7890123456a7",
+          "id": "a1a2a3a4-b5c6-3456-def0-a45678901234",
           "name": "tls_ech_config_path",
           "description": "ECH 配置路径 (客户端)",
           "type": "string",
@@ -495,7 +500,7 @@
           "options": null
         },
         {
-          "id": "7a8a9a0a-8b8c-3456-0000-7890123457a8",
+          "id": "b1b2b3b4-c5d6-3456-def0-a45678901234",
           "name": "tls_reality_enabled",
           "description": "启用 Reality (通用)",
           "type": "boolean",
@@ -504,7 +509,7 @@
           "options": null
         },
         {
-          "id": "8a9a0a1a-9b9c-3456-0000-7890123458a9",
+          "id": "c0c1c2c3-2d2e-3456-0000-789012345c0c",
           "name": "tls_reality_private_key",
           "description": "Reality 私钥 (服务端)",
           "type": "string",
@@ -522,7 +527,7 @@
           "options": null
         },
         {
-          "id": "0a1a2a3a-1b1c-3456-0000-7890123450a1",
+          "id": "e0e1e2e3-4f4a-3456-0000-789012345e0e",
           "name": "tls_reality_handshake_server",
           "description": "Reality 握手服务器 (服务端)",
           "type": "string",
@@ -531,7 +536,7 @@
           "options": null
         },
         {
-          "id": "1a2a3a4a-2b2c-3456-0000-7890123451a2",
+          "id": "c1c2c3c4-d5e6-3456-def0-a45678901234",
           "name": "tls_reality_handshake_port",
           "description": "Reality 握手端口 (服务端)",
           "type": "number",
@@ -540,7 +545,7 @@
           "options": null
         },
         {
-          "id": "2a3a4a5a-3b3c-3456-0000-7890123452a3",
+          "id": "d1d2d3d4-e5f6-3456-def0-a45678901234",
           "name": "tls_reality_short_id",
           "description": "Reality Short ID (通用)",
           "type": "string",
@@ -549,7 +554,7 @@
           "options": null
         },
         {
-          "id": "3a4a5a6a-4b4c-3456-0000-7890123453a4",
+          "id": "e1e2e3e4-f5a6-3456-def0-a45678901234",
           "name": "tls_utls_enabled",
           "description": "启用 uTLS (客户端)",
           "type": "boolean",
@@ -558,7 +563,7 @@
           "options": null
         },
         {
-          "id": "4a5a6a7a-5b5c-3456-0000-7890123454a5",
+          "id": "f1f2f3f4-a5b6-3456-def0-a45678901234",
           "name": "tls_utls_fingerprint",
           "description": "uTLS 指纹 (客户端)",
           "type": "select",
@@ -578,7 +583,7 @@
           ]
         },
         {
-          "id": "5a6a7a8a-6b6c-3456-0000-7890123455a6",
+          "id": "a2a3a4a5-b6c7-3456-def0-a45678901234",
           "name": "tls_fragment_enabled",
           "description": "启用 TLS 分片 (客户端)",
           "type": "boolean",
@@ -587,7 +592,7 @@
           "options": null
         },
         {
-          "id": "6a7a8a9a-7b7c-3456-0000-7890123456a7",
+          "id": "b2b3b4b5-c6d7-3456-def0-a45678901234",
           "name": "tls_record_fragment_enabled",
           "description": "启用 TLS 记录分片 (客户端)",
           "type": "boolean",
@@ -752,6 +757,15 @@
           "defaultValue": "info",
           "required": false,
           "options": ["debug", "info", "warning", "error"]
+        },
+        {
+          "id": "1fe0e5f7-d0c6-5560-0596-f72cc41f637d",
+          "name": "generate_self_signed_cert",
+          "description": "生成自签名证书指令",
+          "type": "string",
+          "defaultValue": "sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/key.pem -out /etc/ssl/certs/cert.pem -subj \"/C=CN/ST=State/L=City/O=Organization/CN=localhost\"",
+          "required": false,
+          "options": null
         }
       ],
       "tags": ["SingBox", "代理", "智能安装", "自动检测", "最新版本"],

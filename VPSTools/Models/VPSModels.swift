@@ -306,6 +306,34 @@ struct DeploymentTemplate: Identifiable, Codable {
     var downloads: Int
     var isOfficial: Bool
     
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, serviceType, category, commands, configTemplate, serviceTemplate, variables, tags, rating, downloads, isOfficial
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // 从字符串解码UUID
+        let idString = try container.decode(String.self, forKey: .id)
+        guard let uuid = UUID(uuidString: idString) else {
+            throw DecodingError.dataCorruptedError(forKey: .id, in: container, debugDescription: "Invalid UUID string: \(idString)")
+        }
+        self.id = uuid
+        
+        self.name = try container.decode(String.self, forKey: .name)
+        self.description = try container.decode(String.self, forKey: .description)
+        self.serviceType = try container.decode(ServiceType.self, forKey: .serviceType)
+        self.category = try container.decode(ServiceCategory.self, forKey: .category)
+        self.commands = try container.decode([String].self, forKey: .commands)
+        self.configTemplate = try container.decode(String.self, forKey: .configTemplate)
+        self.serviceTemplate = try container.decode(String.self, forKey: .serviceTemplate)
+        self.variables = try container.decode([TemplateVariable].self, forKey: .variables)
+        self.tags = try container.decode([String].self, forKey: .tags)
+        self.rating = try container.decode(Double.self, forKey: .rating)
+        self.downloads = try container.decode(Int.self, forKey: .downloads)
+        self.isOfficial = try container.decode(Bool.self, forKey: .isOfficial)
+    }
+    
     init(
         id: UUID = UUID(),
         name: String,
@@ -346,6 +374,28 @@ struct TemplateVariable: Identifiable, Codable {
     var defaultValue: String?
     var required: Bool
     var options: [String]?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, type, defaultValue, required, options
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // 从字符串解码UUID
+        let idString = try container.decode(String.self, forKey: .id)
+        guard let uuid = UUID(uuidString: idString) else {
+            throw DecodingError.dataCorruptedError(forKey: .id, in: container, debugDescription: "Invalid UUID string: \(idString)")
+        }
+        self.id = uuid
+        
+        self.name = try container.decode(String.self, forKey: .name)
+        self.description = try container.decode(String.self, forKey: .description)
+        self.type = try container.decode(VariableType.self, forKey: .type)
+        self.defaultValue = try container.decodeIfPresent(String.self, forKey: .defaultValue)
+        self.required = try container.decode(Bool.self, forKey: .required)
+        self.options = try container.decodeIfPresent([String].self, forKey: .options)
+    }
     
     init(
         id: UUID = UUID(),

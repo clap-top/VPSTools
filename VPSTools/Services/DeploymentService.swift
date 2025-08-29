@@ -3049,19 +3049,40 @@ extension DeploymentService {
         }
         
         if isServer {
-            // 服务端 TLS 配置
-            if let certPath = variables["tls_certificate_path"], !certPath.isEmpty {
-                tlsConfig += """
-                ,
-                "certificate_path": "\(certPath)"
-                """
-            }
+            // 服务端 TLS 配置 - 根据证书配置方式
+            let certificateMethod = variables["tls_certificate_method"] ?? "custom_path"
             
-            if let keyPath = variables["tls_key_path"], !keyPath.isEmpty {
+            switch certificateMethod {
+            case "custom_path":
+                // 自定义路径模式
+                if let certPath = variables["tls_certificate_path"], !certPath.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "certificate_path": "\(certPath)"
+                    """
+                }
+                
+                if let keyPath = variables["tls_key_path"], !keyPath.isEmpty {
+                    tlsConfig += """
+                    ,
+                    "key_path": "\(keyPath)"
+                    """
+                }
+                
+            case "self_signed":
+                // 自签名证书模式 - 使用默认路径
                 tlsConfig += """
                 ,
-                "key_path": "\(keyPath)"
+                "certificate_path": "/etc/ssl/certs/cert.pem",
+                "key_path": "/etc/ssl/private/key.pem"
                 """
+                
+            case "acme":
+                // ACME 模式 - 不需要证书路径，使用 ACME 配置
+                break
+                
+            default:
+                break
             }
         } else {
             // 客户端 TLS 配置
@@ -3097,8 +3118,9 @@ extension DeploymentService {
             """
         }
         
-        // ACME 配置
-        if let acmeEnabled = variables["tls_acme_enabled"], acmeEnabled == "true" {
+        // ACME 配置 - 根据证书配置方式
+        let certificateMethod = variables["tls_certificate_method"] ?? "custom_path"
+        if certificateMethod == "acme" {
             tlsConfig += """
             ,
             "acme": {

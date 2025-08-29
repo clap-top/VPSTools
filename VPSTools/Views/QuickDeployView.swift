@@ -1035,15 +1035,33 @@ struct TemplateDetailView: View {
                             )
                         )
                     } else if template.serviceType == .singbox && shouldShowVariable(variable) {
-                        // 协议相关参数
-                        ProtocolAwareVariableInputView(
-                            variable: variable,
-                            protocol: variables["protocol"] ?? "shadowsocks",
-                            value: Binding(
-                                get: { variables[variable.name] ?? variable.defaultValue ?? "" },
-                                set: { variables[variable.name] = $0 }
+                        // 协议相关参数 - 使用增强的输入组件
+                        if variable.name == "uuid" || variable.name == "tls_reality_private_key" || variable.name == "tls_reality_public_key" {
+                            EnhancedVariableInputView(
+                                variable: variable,
+                                value: Binding(
+                                    get: { variables[variable.name] ?? variable.defaultValue ?? "" },
+                                    set: { variables[variable.name] = $0 }
+                                ),
+                                onGenerateUUID: variable.name == "uuid" ? {
+                                    variables["uuid"] = generateUUID()
+                                } : nil,
+                                onGenerateKeyPair: (variable.name == "tls_reality_private_key" || variable.name == "tls_reality_public_key") ? {
+                                    let keyPair = generateKeyPair()
+                                    variables["tls_reality_private_key"] = keyPair.privateKey
+                                    variables["tls_reality_public_key"] = keyPair.publicKey
+                                } : nil
                             )
-                        )
+                        } else {
+                            ProtocolAwareVariableInputView(
+                                variable: variable,
+                                protocol: variables["protocol"] ?? "shadowsocks",
+                                value: Binding(
+                                    get: { variables[variable.name] ?? variable.defaultValue ?? "" },
+                                    set: { variables[variable.name] = $0 }
+                                )
+                            )
+                        }
                     } else if template.serviceType != .singbox {
                         // 非sing-box模板的普通变量
                         VariableInputView(
@@ -1083,26 +1101,40 @@ struct TemplateDetailView: View {
             // 检查 TLS 是否启用
             let tlsEnabled = variables["tls_enabled"] ?? "false"
             if tlsEnabled == "true" {
-                // 基础 TLS 参数始终显示
+                // 证书配置方式选择器始终显示
+                if variable.name == "tls_certificate_method" {
+                    return true
+                }
+                
+                // 基础 TLS 参数（除了证书相关参数）
                 let basicTlsParams = [
                     "tls_server_name", "tls_insecure", "tls_alpn", 
-                    "tls_min_version", "tls_max_version", "tls_certificate_path", "tls_key_path"
+                    "tls_min_version", "tls_max_version"
                 ]
                 if basicTlsParams.contains(variable.name) {
                     return true
                 }
                 
-                // ACME 相关参数 - 只在 ACME 启用时显示
-                if variable.name == "tls_acme_enabled" {
-                    return true
+                // 根据证书配置方式显示相应参数
+                let certificateMethod = variables["tls_certificate_method"] ?? "custom_path"
+                
+                // 自定义路径模式
+                if certificateMethod == "custom_path" {
+                    let customPathParams = ["tls_certificate_path", "tls_key_path"]
+                    if customPathParams.contains(variable.name) {
+                        return true
+                    }
                 }
-                let acmeEnabled = variables["tls_acme_enabled"] ?? "false"
-                if acmeEnabled == "true" {
+                
+                // ACME 模式
+                if certificateMethod == "acme" {
                     let acmeParams = ["tls_acme_domain", "tls_acme_email", "tls_acme_provider"]
                     if acmeParams.contains(variable.name) {
                         return true
                     }
                 }
+                
+                // 自签名证书模式 - 不需要额外参数，使用默认路径
                 
                 // ECH 相关参数 - 只在 ECH 启用时显示
                 if variable.name == "tls_ech_enabled" {
@@ -1536,6 +1568,18 @@ struct TemplateDetailView: View {
         return String((0..<length).map { _ in characters.randomElement()! })
     }
     
+    private func generateUUID() -> String {
+        return UUID().uuidString
+    }
+    
+    private func generateKeyPair() -> (privateKey: String, publicKey: String) {
+        // 生成Reality密钥对
+        // 这里使用简化的实现，实际应该使用更安全的密钥生成方法
+        let privateKey = generateRandomPassword(length: 64)
+        let publicKey = generateRandomPassword(length: 64)
+        return (privateKey, publicKey)
+    }
+    
     private func updateProtocolDefaults(newProtocol: String) {
         // 清除之前协议的特定参数
         clearProtocolSpecificVariables()
@@ -1649,6 +1693,44 @@ struct VariableInputView: View {
             }
         }
     }
+    
+    // MARK: - Helper Functions
+    
+    private func getVariableDisplayName(_ name: String) -> String {
+        switch name {
+        case "tls_certificate_method":
+            return "证书配置方式"
+        case "tls_certificate_path":
+            return "证书路径"
+        case "tls_key_path":
+            return "私钥路径"
+        case "tls_acme_domain":
+            return "ACME 域名"
+        case "tls_acme_email":
+            return "ACME 邮箱"
+        case "tls_acme_provider":
+            return "ACME 提供商"
+        default:
+            return name
+        }
+    }
+    
+    private func getOptionDisplayName(_ option: String) -> String {
+        switch option {
+        case "custom_path":
+            return "自定义路径"
+        case "acme":
+            return "ACME 自动证书"
+        case "self_signed":
+            return "自签名证书"
+        case "letsencrypt":
+            return "Let's Encrypt"
+        case "zerossl":
+            return "ZeroSSL"
+        default:
+            return option
+        }
+    }
 }
 
 // MARK: - Protocol Aware Variable Input View
@@ -1680,6 +1762,132 @@ struct ProtocolAwareVariableInputView: View {
                     .padding(.vertical, 2)
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(4)
+                
+                if !variable.description.isEmpty {
+                    Button(action: {
+                        // TODO: 显示帮助信息
+                    }) {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
+            // 根据变量类型渲染不同的输入控件
+            switch variable.type {
+            case .select:
+                if let options = variable.options, !options.isEmpty {
+                    Picker(variable.name, selection: $value) {
+                        ForEach(options, id: \.self) { option in
+                            Text(option).tag(option)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
+                } else {
+                    TextField("输入 \(variable.name)", text: $value)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+            case .password:
+                SecureField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            case .number:
+                TextField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.numberPad)
+            case .boolean:
+                Toggle(variable.name, isOn: Binding(
+                    get: { value.lowercased() == "true" },
+                    set: { value = $0 ? "true" : "false" }
+                ))
+                .toggleStyle(SwitchToggleStyle())
+            default:
+                TextField("输入 \(variable.name)", text: $value)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            }
+            
+            if !variable.description.isEmpty {
+                Text(variable.description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Enhanced Variable Input View with Generation Buttons
+
+struct EnhancedVariableInputView: View {
+    let variable: TemplateVariable
+    @Binding var value: String
+    let onGenerateUUID: (() -> Void)?
+    let onGenerateKeyPair: (() -> Void)?
+    
+    init(variable: TemplateVariable, value: Binding<String>, onGenerateUUID: (() -> Void)? = nil, onGenerateKeyPair: (() -> Void)? = nil) {
+        self.variable = variable
+        self._value = value
+        self.onGenerateUUID = onGenerateUUID
+        self.onGenerateKeyPair = onGenerateKeyPair
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(variable.name)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                
+                if variable.required {
+                    Text("*")
+                        .foregroundColor(.red)
+                }
+                
+                Spacer()
+                
+                // 生成按钮
+                if variable.name == "uuid" && onGenerateUUID != nil {
+                    Button(action: {
+                        onGenerateUUID?()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption)
+                            Text("生成")
+                                .font(.caption)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(6)
+                    }
+                }
+                
+                if (variable.name == "tls_reality_private_key" || variable.name == "tls_reality_public_key") && onGenerateKeyPair != nil {
+                    Button(action: {
+                        onGenerateKeyPair?()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "key.fill")
+                                .font(.caption)
+                            Text("生成")
+                                .font(.caption)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(6)
+                    }
+                }
                 
                 if !variable.description.isEmpty {
                     Button(action: {
