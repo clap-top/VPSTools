@@ -13,6 +13,11 @@ struct DeploymentExecutionView: View {
     @State private var isExecuting = false
     @State private var currentTask: DeploymentTask?
     @State private var progressCancellable: AnyCancellable?
+    @State private var showingClientConfig = false
+    @State private var showingExportOptions = false
+    @State private var exportConfig: ClientConfiguration?
+    @State private var exportFormats: [ClientConfigFormat] = []
+    @State private var exportProtocols: [ProtocolType] = []
     
     var body: some View {
         NavigationView {
@@ -52,6 +57,23 @@ struct DeploymentExecutionView: View {
                 // 清理进度监听
                 progressCancellable?.cancel()
                 progressCancellable = nil
+            }
+            .sheet(isPresented: $showingClientConfig) {
+                if let clientConfigGenerator = deploymentService.clientConfigGenerator {
+                    ClientConfigView(
+                        clientConfigGenerator: clientConfigGenerator,
+                        vpsManager: deploymentService.vpsManager
+                    )
+                }
+            }
+            .sheet(isPresented: $showingExportOptions) {
+                if let config = exportConfig {
+                    ClientConfigDetailView(
+                        config: config,
+                        clientConfigGenerator: deploymentService.clientConfigGenerator!,
+                        vpsManager: deploymentService.vpsManager
+                    )
+                }
             }
         }
     }
@@ -325,10 +347,25 @@ struct DeploymentExecutionView: View {
                     .foregroundColor(.red)
                     
                 case .completed:
-                    Button("完成") {
-                        dismiss()
+                    VStack(spacing: 8) {
+                        // 如果是 sing-box 部署，显示客户端配置选项
+                        if template.serviceType == .singbox {
+                            Button("查看客户端配置") {
+                                showClientConfigurations()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            
+                            Button("导出配置") {
+                                exportClientConfigurations()
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                        
+                        Button("完成") {
+                            dismiss()
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.borderedProminent)
                     
                 case .failed:
                     VStack(spacing: 8) {
@@ -475,6 +512,36 @@ struct DeploymentExecutionView: View {
             } catch {
                 await MainActor.run {
                     print("重试失败: \(error)")
+                }
+            }
+        }
+    }
+    
+    private func showClientConfigurations() {
+        showingClientConfig = true
+    }
+    
+    private func exportClientConfigurations() {
+        // 导出当前部署任务的配置
+        guard let task = currentTask,
+              let clientConfigGenerator = deploymentService.clientConfigGenerator else { return }
+        
+        Task {
+            do {
+                let clientConfig = try await clientConfigGenerator.generateClientConfiguration(from: task)
+                let formats: [ClientConfigFormat] = [.singBox, .clash, .v2ray]
+                let protocols: [ProtocolType] = [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+                
+                await MainActor.run {
+                    // 显示导出选项
+                    showingExportOptions = true
+                    exportConfig = clientConfig
+                    exportFormats = formats
+                    exportProtocols = protocols
+                }
+            } catch {
+                await MainActor.run {
+                    print("导出配置失败: \(error)")
                 }
             }
         }

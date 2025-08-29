@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var showingAddVPS = false
     @State private var showingDeployment = false
     @State private var showingMonitoring = false
+    @State private var showingClientConfig = false
     @State private var isLoading = false
     
     var body: some View {
@@ -29,6 +30,30 @@ struct HomeView: View {
             }
             .navigationTitle(Text(.homeViewTitle))
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("客户端配置") {
+                            showingClientConfig = true
+                        }
+                        
+                        Button("添加 VPS") {
+                            showingAddVPS = true
+                        }
+                        
+                        Button("部署服务") {
+                            showingDeployment = true
+                        }
+                        
+                        Button("系统监控") {
+                            showingMonitoring = true
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.title2)
+                    }
+                }
+            }
             .refreshable {
                 await refreshData()
             }
@@ -45,6 +70,14 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingMonitoring) {
                 MonitoringView(vpsManager: vpsManager)
+            }
+            .sheet(isPresented: $showingClientConfig) {
+                if let clientConfigGenerator = deploymentService.clientConfigGenerator {
+                    ClientConfigView(
+                        clientConfigGenerator: clientConfigGenerator,
+                        vpsManager: vpsManager
+                    )
+                }
             }
             .sheet(item: $selectedDeploymentTask, onDismiss: {
                 selectedDeploymentTask = nil

@@ -21,6 +21,11 @@ struct DeploymentTaskDetailView: View {
     @State private var showingSuccessAlert = false
     @State private var successMessage = ""
     @State private var showingDeleteConfirmation = false
+    @State private var showingClientConfig = false
+    @State private var showingExportOptions = false
+    @State private var exportConfig: ClientConfiguration?
+    @State private var exportFormats: [ClientConfigFormat] = []
+    @State private var exportProtocols: [ProtocolType] = []
     
     var body: some View {
         NavigationView {
@@ -40,6 +45,11 @@ struct DeploymentTaskDetailView: View {
                     // 执行状态
                     executionStatusSection
                     
+                    // 操作按钮（仅对sing-box部署显示）
+                    if task.templateId != nil && isSingBoxDeployment() {
+                        actionButtonsSection
+                    }
+                    
                     // 日志列表
                     logsSection
                 }
@@ -48,11 +58,6 @@ struct DeploymentTaskDetailView: View {
             .navigationTitle("部署任务详情")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-//                ToolbarItem(placement: .navigationBarLeading) {
-//                    Button("返回") {
-//                        dismiss()
-//                    }
-//                }
                 if task.status == .failed || task.status == .cancelled {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Menu {
@@ -65,13 +70,6 @@ struct DeploymentTaskDetailView: View {
                                 .disabled(isRetrying)
                             }
                             
-                            //                        Button("复制配置") {
-                            //                            copyTaskConfiguration()
-                            //                        }
-                            //
-                            //                        Button("删除任务") {
-                            //                            showingDeleteConfirmation = true
-                            //                        }
                         } label: {
                             Image(systemName: "ellipsis.circle")
                         }
@@ -96,6 +94,23 @@ struct DeploymentTaskDetailView: View {
             Button("取消", role: .cancel) { }
         } message: {
             Text("确定要删除这个部署任务吗？此操作无法撤销。")
+        }
+        .sheet(isPresented: $showingClientConfig) {
+            if let clientConfigGenerator = deploymentService.clientConfigGenerator {
+                ClientConfigView(
+                    clientConfigGenerator: clientConfigGenerator,
+                    vpsManager: vpsManager
+                )
+            }
+        }
+        .sheet(isPresented: $showingExportOptions) {
+            if let config = exportConfig {
+                ClientConfigDetailView(
+                    config: config,
+                    clientConfigGenerator: deploymentService.clientConfigGenerator!,
+                    vpsManager: vpsManager
+                )
+            }
         }
     }
     
@@ -731,6 +746,50 @@ struct DeploymentTaskDetailView: View {
         return .gray
     }
     
+    // MARK: - Action Buttons Section
+    
+    private var actionButtonsSection: some View {
+        VStack(spacing: 12) {
+            Text("客户端配置")
+                .font(.headline)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack(spacing: 12) {
+                Button(action: showClientConfigurations) {
+                    HStack {
+                        Image(systemName: "gear")
+                            .font(.system(size: 16, weight: .medium))
+                        Text("查看配置")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+                
+                Button(action: exportClientConfigurations) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 16, weight: .medium))
+                        Text("导出配置")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+    
     // MARK: - Action Methods
     
     private func retryDeployment() async {
@@ -776,6 +835,44 @@ struct DeploymentTaskDetailView: View {
         deploymentService.deleteTask(task.id)
         dismiss()
     }
+    
+    private func isSingBoxDeployment() -> Bool {
+        // 检查是否是sing-box部署
+        if let templateId = task.templateId,
+           let template = deploymentService.getTemplate(by: templateId.uuidString) {
+            return template.serviceType == .singbox
+        }
+        return false
+    }
+    
+    private func showClientConfigurations() {
+        showingClientConfig = true
+    }
+    
+    private func exportClientConfigurations() {
+        // 导出当前部署任务的配置
+        guard let clientConfigGenerator = deploymentService.clientConfigGenerator else { return }
+        
+        Task {
+            do {
+                let clientConfig = try await clientConfigGenerator.generateClientConfiguration(from: task)
+                let formats: [ClientConfigFormat] = [.singBox, .clash, .v2ray]
+                let protocols: [ProtocolType] = [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+                
+                await MainActor.run {
+                    // 显示导出选项
+                    showingExportOptions = true
+                    exportConfig = clientConfig
+                    exportFormats = formats
+                    exportProtocols = protocols
+                }
+            } catch {
+                await MainActor.run {
+                    print("导出配置失败: \(error)")
+                }
+            }
+        }
+    }
 }
 
 
@@ -787,6 +884,7 @@ struct DeploymentTaskDetailView_Previews: PreviewProvider {
         DeploymentTaskDetailView(
             task: DeploymentTask(
                 vpsId: UUID(),
+                templateId: UUID(),
                 customCommands: ["echo 'test'", "whoami"],
                 variables: ["port": "8080", "password": "test123"]
             ),

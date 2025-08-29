@@ -19,8 +19,9 @@ class DeploymentService: ObservableObject {
     
     // MARK: - Private Properties
     
-    private let vpsManager: VPSManager
+    let vpsManager: VPSManager
     private var cancellables = Set<AnyCancellable>()
+    var clientConfigGenerator: ClientConfigGenerator?
     
     // AI 部署计划缓存，避免重复调用接口
     private var deploymentPlanCache: [String: (plan: DeploymentPlan, timestamp: Date)] = [:]
@@ -48,6 +49,7 @@ class DeploymentService: ObservableObject {
     
     init(vpsManager: VPSManager) {
         self.vpsManager = vpsManager
+        self.clientConfigGenerator = ClientConfigGenerator(vpsManager: vpsManager)
         // 异步加载远程模板
         Task {
            await loadTemplatesFromRemote()
@@ -206,6 +208,12 @@ class DeploymentService: ObservableObject {
             deploymentTasks[index].completedAt = Date()
             deploymentTasks[index].progress = 1.0
             addLog(to: task.id, level: .success, message: "部署完成")
+            
+            // 如果是 sing-box 部署，自动生成客户端配置
+            if let template = task.templateId.flatMap({ getTemplate(by: $0.uuidString) }),
+               template.serviceType == .singbox {
+                await generateClientConfigurationAfterDeployment(task: task)
+            }
             
         } catch {
             // 更新任务状态为失败
@@ -3367,6 +3375,30 @@ extension DeploymentService {
         }
         
         return ports
+    }
+    
+    /// 部署完成后生成客户端配置
+    private func generateClientConfigurationAfterDeployment(task: DeploymentTask) async {
+        do {
+            guard let clientConfigGenerator = clientConfigGenerator else { return }
+            
+            let clientConfig = try await clientConfigGenerator.generateClientConfiguration(from: task)
+            addLog(to: task.id, level: .success, message: "客户端配置已生成，支持多种客户端应用")
+            
+            // 生成常用格式的配置
+            let formats: [ClientConfigFormat] = [.singBox, .clash, .v2ray]
+            for format in formats {
+                do {
+                    let configContent = try clientConfigGenerator.generateConfigContent(for: clientConfig, format: format)
+                    addLog(to: task.id, level: .info, message: "已生成 \(format.displayName) 格式配置")
+                } catch {
+                    addLog(to: task.id, level: .warning, message: "生成 \(format.displayName) 格式配置失败: \(error.localizedDescription)")
+                }
+            }
+            
+        } catch {
+            addLog(to: task.id, level: .error, message: "生成客户端配置失败: \(error.localizedDescription)")
+        }
     }
     
     /// 检查单个端口是否可用

@@ -819,3 +819,248 @@ enum NetworkStatusLevel: String, Codable {
         }
     }
 }
+
+// MARK: - Client Configuration Models
+
+/// 客户端配置信息
+struct ClientConfiguration: Identifiable, Codable {
+    let id: UUID
+    let deploymentTaskId: UUID
+    let vpsId: UUID
+    let protocolType: String
+    let serverAddress: String
+    let port: Int
+    let password: String?
+    let uuid: String?
+    let method: String?
+    let transport: ClientTransportConfig?
+    let tls: ClientTLSConfig?
+    let createdAt: Date
+    
+    init(
+        id: UUID = UUID(),
+        deploymentTaskId: UUID,
+        vpsId: UUID,
+        protocolType: String,
+        serverAddress: String,
+        port: Int,
+        password: String? = nil,
+        uuid: String? = nil,
+        method: String? = nil,
+        transport: ClientTransportConfig? = nil,
+        tls: ClientTLSConfig? = nil
+    ) {
+        self.id = id
+        self.deploymentTaskId = deploymentTaskId
+        self.vpsId = vpsId
+        self.protocolType = protocolType
+        self.serverAddress = serverAddress
+        self.port = port
+        self.password = password
+        self.uuid = uuid
+        self.method = method
+        self.transport = transport
+        self.tls = tls
+        self.createdAt = Date()
+    }
+}
+
+/// 客户端传输配置
+struct ClientTransportConfig: Codable {
+    let type: String
+    let path: String?
+    let host: String?
+    let headers: [String: String]?
+    let serviceName: String?
+    let idleTimeout: String?
+    let pingTimeout: String?
+    let permitWithoutStream: Bool?
+    
+    init(
+        type: String,
+        path: String? = nil,
+        host: String? = nil,
+        headers: [String: String]? = nil,
+        serviceName: String? = nil,
+        idleTimeout: String? = nil,
+        pingTimeout: String? = nil,
+        permitWithoutStream: Bool? = nil
+    ) {
+        self.type = type
+        self.path = path
+        self.host = host
+        self.headers = headers
+        self.serviceName = serviceName
+        self.idleTimeout = idleTimeout
+        self.pingTimeout = pingTimeout
+        self.permitWithoutStream = permitWithoutStream
+    }
+}
+
+/// 客户端TLS配置
+struct ClientTLSConfig: Codable {
+    let enabled: Bool
+    let serverName: String?
+    let allowInsecure: Bool
+    let alpn: [String]?
+    let certificatePath: String?
+    let keyPath: String?
+    
+    init(
+        enabled: Bool,
+        serverName: String? = nil,
+        allowInsecure: Bool = false,
+        alpn: [String]? = nil,
+        certificatePath: String? = nil,
+        keyPath: String? = nil
+    ) {
+        self.enabled = enabled
+        self.serverName = serverName
+        self.allowInsecure = allowInsecure
+        self.alpn = alpn
+        self.certificatePath = certificatePath
+        self.keyPath = keyPath
+    }
+}
+
+/// 客户端配置格式
+enum ClientConfigFormat: String, CaseIterable, Codable {
+    case singBox = "sing-box"
+    case clash = "clash"
+    case v2ray = "v2ray"
+    
+    var displayName: String {
+        switch self {
+        case .singBox: return "sing-box"
+        case .clash: return "Clash"
+        case .v2ray: return "V2Ray"
+        }
+    }
+    
+    var fileExtension: String {
+        switch self {
+        case .singBox, .clash, .v2ray:
+            return "json"
+        }
+    }
+    
+    var mimeType: String {
+        return "application/json"
+    }
+}
+
+/// 协议类型
+enum ProtocolType: String, CaseIterable, Codable {
+    case shadowsocks = "shadowsocks"
+    case vmess = "vmess"
+    case vless = "vless"
+    case trojan = "trojan"
+    case hysteria = "hysteria"
+    case hysteria2 = "hysteria2"
+    case tuic = "tuic"
+    case naive = "naive"
+    case shadowtls = "shadowtls"
+    
+    var displayName: String {
+        switch self {
+        case .shadowsocks: return "Shadowsocks"
+        case .vmess: return "VMess"
+        case .vless: return "VLESS"
+        case .trojan: return "Trojan"
+        case .hysteria: return "Hysteria"
+        case .hysteria2: return "Hysteria2"
+        case .tuic: return "TUIC"
+        case .naive: return "Naive"
+        case .shadowtls: return "ShadowTLS"
+        }
+    }
+    
+    var urlScheme: String {
+        switch self {
+        case .shadowsocks: return "ss"
+        case .vmess: return "vmess"
+        case .vless: return "vless"
+        case .trojan: return "trojan"
+        case .hysteria: return "hysteria"
+        case .hysteria2: return "hysteria2"
+        case .tuic: return "tuic"
+        case .naive: return "naive"
+        case .shadowtls: return "shadowtls"
+        }
+    }
+}
+
+/// 客户端应用类型
+enum ClientAppType: String, CaseIterable, Codable {
+    case clash = "clash"
+    case shadowrocket = "shadowrocket"
+    case v2rayNG = "v2rayng"
+    case singBox = "sing-box"
+    case clashForWindows = "clash_for_windows"
+    case clashX = "clashx"
+    case v2rayU = "v2rayu"
+    case quantumultX = "quantumult_x"
+    case surge = "surge"
+    case loon = "loon"
+    case stash = "stash"
+    case hiddify = "hiddify"
+    
+    var displayName: String {
+        switch self {
+        case .clash: return "Clash"
+        case .shadowrocket: return "Shadowrocket"
+        case .v2rayNG: return "V2rayNG"
+        case .singBox: return "sing-box"
+        case .clashForWindows: return "Clash for Windows"
+        case .clashX: return "ClashX"
+        case .v2rayU: return "V2rayU"
+        case .quantumultX: return "Quantumult X"
+        case .surge: return "Surge"
+        case .loon: return "Loon"
+        case .stash: return "Stash"
+        case .hiddify: return "Hiddify"
+        }
+    }
+    
+    var supportedFormats: [ClientConfigFormat] {
+        switch self {
+        case .clash, .clashForWindows, .clashX, .stash:
+            return [.clash]
+        case .shadowrocket:
+            return [.singBox, .clash, .v2ray]
+        case .v2rayNG, .v2rayU:
+            return [.v2ray, .singBox]
+        case .singBox:
+            return [.singBox]
+        case .quantumultX:
+            return [.singBox, .clash, .v2ray]
+        case .surge:
+            return [.singBox, .clash, .v2ray]
+        case .loon:
+            return [.singBox, .clash, .v2ray]
+        case .hiddify:
+            return [.clash, .singBox, .v2ray]
+        }
+    }
+    
+    var supportedProtocols: [ProtocolType] {
+        switch self {
+        case .clash, .clashForWindows, .clashX, .stash:
+            return [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+        case .shadowrocket:
+            return [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+        case .v2rayNG, .v2rayU:
+            return [.shadowsocks, .vmess, .vless, .trojan]
+        case .singBox:
+            return [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+        case .quantumultX:
+            return [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+        case .surge:
+            return [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+        case .loon:
+            return [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+        case .hiddify:
+            return [.shadowsocks, .vmess, .vless, .trojan, .hysteria, .hysteria2, .tuic, .naive, .shadowtls]
+        }
+    }
+}
