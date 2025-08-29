@@ -37,6 +37,9 @@
 		F684E4BA2E5C08D2001A0E6D /* builtin_templates.json in Resources */ = {isa = PBXBuildFile; fileRef = F684E4B82E5C08D2001A0E6D /* builtin_templates.json */; };
 		F6DA31F82E5EA723000F0D87 /* SSHConnectionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */; };
 		F6DA31FF2E5F018D000F0D87 /* ConnectionPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA31FE2E5F018D000F0D87 /* ConnectionPool.swift */; };
+		F6DA32052E616CC5000F0D87 /* ClientConfigGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA32042E616CC5000F0D87 /* ClientConfigGenerator.swift */; };
+		F6DA32072E616CC6000F0D87 /* ClientConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA32062E616CC6000F0D87 /* ClientConfigView.swift */; };
+		F6DA32072E616DCC000F0D87 /* ClientConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6DA32062E616DCC000F0D87 /* ClientConfigView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -71,6 +74,8 @@
 		F684E4B82E5C08D2001A0E6D /* builtin_templates.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = builtin_templates.json; sourceTree = "<group>"; };
 		F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConnectionConfig.swift; sourceTree = "<group>"; };
 		F6DA31FE2E5F018D000F0D87 /* ConnectionPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionPool.swift; sourceTree = "<group>"; };
+		F6DA32042E616CC5000F0D87 /* ClientConfigGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientConfigGenerator.swift; sourceTree = "<group>"; };
+		F6DA32062E616DCC000F0D87 /* ClientConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientConfigView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +143,7 @@
 		A1234567890123456789018C /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				F6DA32042E616CC5000F0D87 /* ClientConfigGenerator.swift */,
 				F6DA31FE2E5F018D000F0D87 /* ConnectionPool.swift */,
 				F6DA31F62E5EA723000F0D87 /* SSHConnectionConfig.swift */,
 				18856BC82E5999FB00D32A6D /* LocalizationManager.swift */,
@@ -154,6 +160,7 @@
 		A1234567890123456789037C /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				F6DA32062E616DCC000F0D87 /* ClientConfigView.swift */,
 				18856BC62E597C3400D32A6D /* MonitoringView.swift */,
 				18856BC42E59580D00D32A6D /* QuickDeployView.swift */,
 				F684E4B62E586CF8001A0E6D /* HomeView.swift */,
@@ -270,8 +277,10 @@
 				F6DA31FF2E5F018D000F0D87 /* ConnectionPool.swift in Sources */,
 				F684E4B32E5820FB001A0E6D /* SingBoxInstallView.swift in Sources */,
 				A1234567890123456789025A /* SSHClient.swift in Sources */,
+				F6DA32052E616CC5000F0D87 /* ClientConfigGenerator.swift in Sources */,
 				F684E4B12E582070001A0E6D /* SingBoxInstallService.swift in Sources */,
 				A1234567890123456789025C /* DeploymentService.swift in Sources */,
+				F6DA32072E616DCC000F0D87 /* ClientConfigView.swift in Sources */,
 				A1234567890123456789028A /* VPSManager.swift in Sources */,
 				A1234567890123456789030A /* DeploymentView.swift in Sources */,
 				18856BC32E594E4B00D32A6D /* AppLifecycleManager.swift in Sources */,
